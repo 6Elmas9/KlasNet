@@ -133,16 +133,24 @@ export interface EcheancePaiement {
   label: string;
 }
 
+export interface Allocation {
+  echeanceId: string;
+  montant: number;
+}
+
 // Paiement
 export interface Paiement extends BaseEntity {
   eleveId: string;
   montant: number;
   datePaiement: string;
   typeFrais: string;
+  versementIndex?: number;
   modePaiement: 'Espèces' | 'Mobile Money' | 'Chèque' | 'Virement';
   numeroRecu: string;
   operateur: string;
   notes: string;
+  allocations?: Allocation[];
+  avance?: number;
 }
 
 // Situation financière

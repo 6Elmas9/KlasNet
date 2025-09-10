@@ -1,10 +1,14 @@
-import { useMemo, useState } from 'react';
-import { Search, Plus, DollarSign, Users, FileText, Printer } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Search, Plus, Download, Upload, Edit2, Eye, Trash2, Filter, Printer, DollarSign, Users, FileText, AlertTriangle } from 'lucide-react';
 import { db } from '../../utils/database';
-import { Eleve, Paiement, FraisScolaire, Classe } from '../../types';
+import { Eleve, Classe, Paiement, FraisScolaire } from '../../types';
 import { useToast } from '../Layout/ToastProvider';
 import PaymentForm from './PaymentForm';
 import RecuPaiement from './RecuPaiement';
+import CombinedRecu from './CombinedRecu';
+import Convocation from './Convocation';
+import { computeScheduleForEleve } from '../../utils/payments';
+import { openPrintPreviewFromElementId } from '../../utils/printPreview';
 
 export default function FinancesList() {
   const { showToast } = useToast();
@@ -13,6 +17,8 @@ export default function FinancesList() {
   const [filterStatut, setFilterStatut] = useState('');
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showRecuModal, setShowRecuModal] = useState(false);
+  const [showCombinedRecuModal, setShowCombinedRecuModal] = useState(false);
+  const [showConvocationModal, setShowConvocationModal] = useState(false);
   const [selectedEleve, setSelectedEleve] = useState<Eleve | null>(null);
   const [lastPayment, setLastPayment] = useState<Paiement | null>(null);
 
@@ -21,6 +27,7 @@ export default function FinancesList() {
   const fraisScolaires = db.getAll<FraisScolaire>('fraisScolaires');
   const classes = db.getAll<Classe>('classes');
 
+  // Calcul des situations financières avec l'ancienne logique
   const situationsFinancieres = useMemo(() => {
     return eleves.map(eleve => {
       const classe = classes.find(c => c.id === eleve.classeId);
@@ -28,16 +35,14 @@ export default function FinancesList() {
         f.niveau === classe.niveau && f.anneeScolaire === classe.anneeScolaire
       ) : undefined;
 
-      const totalDu = frais ? 
-        (frais.fraisInscription || 0) + 
-        (frais.fraisScolarite || 0) + 
-        (frais.fraisCantine || 0) + 
-        (frais.fraisTransport || 0) + 
-        (frais.fraisFournitures || 0)
-        : 0;
+      // Calcul du total dû basé sur les échéances
+      let totalDu = 0;
+      if (frais && frais.echeances) {
+        totalDu = frais.echeances.reduce((sum, e) => sum + (e.montant || 0), 0);
+      }
 
       const paiementsEleve = paiements.filter(p => p.eleveId === eleve.id);
-      const totalPaye = paiementsEleve.reduce((sum, p) => sum + p.montant, 0);
+      const totalPaye = paiementsEleve.reduce((sum, p) => sum + (p.montant || 0), 0);
       const solde = totalDu - totalPaye;
 
       let statut: 'Payé' | 'Partiel' | 'Impayé' = 'Impayé';
@@ -49,10 +54,11 @@ export default function FinancesList() {
         classe,
         totalDu,
         totalPaye,
-        solde,
+        solde: Math.max(0, solde),
         statut,
+        paiementsEleve,
         dernierPaiement: paiementsEleve.length > 0 ? 
-          paiementsEleve.sort((a, b) => new Date(b.datePaiement).getTime() - new Date(a.datePaiement).getTime())[0]
+          paiementsEleve.sort((a, b) => new Date(b.datePaiement || b.createdAt).getTime() - new Date(a.datePaiement || a.createdAt).getTime())[0]
           : null
       };
     });
@@ -81,7 +87,7 @@ export default function FinancesList() {
     return filtered.sort((a, b) => a.eleve.nom.localeCompare(b.eleve.nom));
   }, [situationsFinancieres, searchTerm, filterClasse, filterStatut]);
 
-  const handlePaymentSubmit = (eleveId: string, _montant: number, _type: string, _modalite: number | 'auto', paiement?: Paiement | null) => {
+  const handlePaymentSubmit = (eleveId: string, montant: number, type: string, modalite: number | 'auto', paiement?: Paiement) => {
     setShowPaymentForm(false);
     if (paiement) {
       setLastPayment(paiement);
@@ -92,6 +98,8 @@ export default function FinancesList() {
       }
     }
     showToast('Paiement enregistré avec succès', 'success');
+    // Recharger la page pour voir les changements
+    setTimeout(() => window.location.reload(), 1000);
   };
 
   const getStatutColor = (statut: string) => {
@@ -107,64 +115,108 @@ export default function FinancesList() {
     return new Intl.NumberFormat('fr-FR').format(montant) + ' FCFA';
   };
 
-  const handlePrintRecu = (eleve: Eleve, paiement: Paiement) => {
-    const classe = classes.find(c => c.id === eleve.classeId);
+  const handlePrintRecu = (eleve: Eleve) => {
     const situation = situationsFinancieres.find(s => s.eleve.id === eleve.id);
-    
-    if (!situation) return;
+    if (!situation || !situation.dernierPaiement) return;
 
-    const newWindow = window.open('', '_blank', 'width=800,height=600');
-    if (newWindow) {
-      newWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Reçu</title></head><body>` +
-        `<h2>Reçu de paiement</h2>` +
-        `<p><strong>Élève:</strong> ${eleve.prenoms} ${eleve.nom}</p>` +
-        `<p><strong>Matricule:</strong> ${eleve.matricule}</p>` +
-        `<p><strong>Classe:</strong> ${classe ? `${classe.niveau} ${classe.section}` : ''}</p>` +
-        `<p><strong>Montant:</strong> ${paiement.montant.toLocaleString('fr-FR')} FCFA</p>` +
-        `<p><strong>Date:</strong> ${paiement.datePaiement}</p>` +
-        `</body></html>`);
-      newWindow.document.close();
-      setTimeout(() => newWindow.print(), 300);
+    setSelectedEleve(eleve);
+    setLastPayment(situation.dernierPaiement);
+    setShowRecuModal(true);
+  };
+
+  const handlePrintCombinedRecu = (eleve: Eleve) => {
+    const situation = situationsFinancieres.find(s => s.eleve.id === eleve.id);
+    if (!situation || situation.paiementsEleve.length === 0) {
+      showToast('Aucun paiement trouvé pour cet élève', 'error');
+      return;
     }
+
+    setSelectedEleve(eleve);
+    setShowCombinedRecuModal(true);
   };
 
   const handlePrintConvocation = (eleve: Eleve) => {
     try {
-      // fallback simple convocation (computeScheduleForEleve may not be available)
-      const classe = classes.find(c => c.id === eleve.classeId);
-      const newWindow = window.open('', '_blank', 'width=800,height=600');
-      if (newWindow) {
-        newWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Convocation</title></head><body>` +
-          `<h2>Convocation de paiement</h2>` +
-          `<p><strong>Élève:</strong> ${eleve.prenoms} ${eleve.nom}</p>` +
-          `<p><strong>Classe:</strong> ${classe ? `${classe.niveau} ${classe.section}` : ''}</p>` +
-          `</body></html>`);
-        newWindow.document.close();
-        setTimeout(() => newWindow.print(), 300);
+      const schedule = computeScheduleForEleve(eleve.id);
+      const echeancesImpayees = schedule.filter(s => s.remaining > 0);
+      
+      if (echeancesImpayees.length === 0) {
+        showToast('Aucune échéance impayée pour cet élève', 'info');
+        return;
       }
+
+      setSelectedEleve(eleve);
+      setShowConvocationModal(true);
     } catch (error) {
       console.error('Erreur convocation:', error);
       showToast('Erreur lors de la génération de la convocation', 'error');
     }
   };
 
+  // Statistiques financières
+  const stats = useMemo(() => {
+    const totalRecettes = paiements.reduce((sum, p) => sum + (p.montant || 0), 0);
+    const elevesPayes = situationsFinancieres.filter(s => s.statut === 'Payé').length;
+    const elevesPartiels = situationsFinancieres.filter(s => s.statut === 'Partiel').length;
+    const elevesImpayes = situationsFinancieres.filter(s => s.statut === 'Impayé').length;
+    const totalDu = situationsFinancieres.reduce((sum, s) => sum + s.totalDu, 0);
+    const totalSolde = situationsFinancieres.reduce((sum, s) => sum + s.solde, 0);
+
+    return {
+      totalRecettes,
+      elevesPayes,
+      elevesPartiels,
+      elevesImpayes,
+      totalDu,
+      totalSolde
+    };
+  }, [paiements, situationsFinancieres]);
+
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestion Financière</h1>
-          <p className="text-gray-600">{filteredSituations.length} élève(s) trouvé(s)</p>
+      {/* En-tête avec statistiques */}
+      <div className="bg-gradient-to-r from-teal-600 to-blue-600 text-white p-6 rounded-xl shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold">💰 Gestion Financière</h1>
+            <p className="text-teal-100 mt-1">Suivi des paiements et situations financières</p>
+          </div>
+          <button 
+            onClick={() => setShowPaymentForm(true)}
+            className="flex items-center space-x-2 px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl transition-all"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="font-semibold">Nouveau Paiement</span>
+          </button>
         </div>
-        <button 
-          onClick={() => setShowPaymentForm(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Nouveau Paiement</span>
-        </button>
+
+        {/* Statistiques en ligne */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold">{formatMontant(stats.totalRecettes)}</div>
+            <div className="text-teal-100 text-sm">Total Recettes</div>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-green-300">{stats.elevesPayes}</div>
+            <div className="text-teal-100 text-sm">✅ Payés</div>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-yellow-300">{stats.elevesPartiels}</div>
+            <div className="text-teal-100 text-sm">⚠️ Partiels</div>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-red-300">{stats.elevesImpayes}</div>
+            <div className="text-teal-100 text-sm">❌ Impayés</div>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold">{formatMontant(stats.totalSolde)}</div>
+            <div className="text-teal-100 text-sm">Reste à encaisser</div>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white p-4 rounded-lg border border-gray-200">
+      {/* Filtres et recherche */}
+      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -173,14 +225,14 @@ export default function FinancesList() {
               placeholder="Rechercher un élève..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             />
           </div>
           
           <select
             value={filterClasse}
             onChange={(e) => setFilterClasse(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           >
             <option value="">Toutes les classes</option>
             {classes.map(classe => (
@@ -193,153 +245,180 @@ export default function FinancesList() {
           <select
             value={filterStatut}
             onChange={(e) => setFilterStatut(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           >
             <option value="">Tous les statuts</option>
-            <option value="Payé">Payé</option>
-            <option value="Partiel">Partiel</option>
-            <option value="Impayé">Impayé</option>
+            <option value="Payé">✅ Payé</option>
+            <option value="Partiel">⚠️ Partiel</option>
+            <option value="Impayé">❌ Impayé</option>
           </select>
+
+          <button 
+            onClick={() => openPrintPreviewFromElementId('finances-print-area', 'Situation financière')}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            <Printer className="h-4 w-4" />
+            <span>Imprimer Liste</span>
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Recettes</p>
-              <p className="text-2xl font-bold text-green-600">
-                {formatMontant(paiements.reduce((sum, p) => sum + p.montant, 0))}
-              </p>
-            </div>
-            <DollarSign className="h-8 w-8 text-green-600" />
-          </div>
+      {/* Zone d'impression cachée */}
+      <div id="finances-print-area" className="hidden print:block bg-white p-4 mb-4 print-compact">
+        <div className="text-center mb-4">
+          <h2 className="text-xl font-bold">SITUATION FINANCIÈRE DES ÉLÈVES</h2>
+          <p className="text-sm text-gray-600">Année scolaire {classes[0]?.anneeScolaire || ''}</p>
+          <p className="text-xs text-gray-500">Imprimé le {new Date().toLocaleDateString('fr-FR')}</p>
         </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Payé</p>
-              <p className="text-2xl font-bold text-green-600">
-                {situationsFinancieres.filter(s => s.statut === 'Payé').length}
-              </p>
-            </div>
-            <Users className="h-8 w-8 text-green-600" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Partiel</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {situationsFinancieres.filter(s => s.statut === 'Partiel').length}
-              </p>
-            </div>
-            <Users className="h-8 w-8 text-orange-600" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Impayé</p>
-              <p className="text-2xl font-bold text-red-600">
-                {situationsFinancieres.filter(s => s.statut === 'Impayé').length}
-              </p>
-            </div>
-            <Users className="h-8 w-8 text-red-600" />
-          </div>
-        </div>
+        
+        <table className="w-full border-collapse text-xs">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border px-2 py-1 text-left">N°</th>
+              <th className="border px-2 py-1 text-left">Matricule</th>
+              <th className="border px-2 py-1 text-left">Nom et Prénoms</th>
+              <th className="border px-2 py-1 text-left">Classe</th>
+              <th className="border px-2 py-1 text-right">Total Dû</th>
+              <th className="border px-2 py-1 text-right">Total Payé</th>
+              <th className="border px-2 py-1 text-right">Reste</th>
+              <th className="border px-2 py-1 text-center">Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredSituations.map((situation, idx) => (
+              <tr key={situation.eleve.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                <td className="border px-2 py-1">{idx + 1}</td>
+                <td className="border px-2 py-1">{situation.eleve.matricule}</td>
+                <td className="border px-2 py-1">{situation.eleve.prenoms} {situation.eleve.nom}</td>
+                <td className="border px-2 py-1">{situation.classe ? `${situation.classe.niveau} ${situation.classe.section}` : '-'}</td>
+                <td className="border px-2 py-1 text-right">{situation.totalDu.toLocaleString('fr-FR')}</td>
+                <td className="border px-2 py-1 text-right">{situation.totalPaye.toLocaleString('fr-FR')}</td>
+                <td className="border px-2 py-1 text-right">{situation.solde.toLocaleString('fr-FR')}</td>
+                <td className="border px-2 py-1 text-center">{situation.statut}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* Tableau principal avec design amélioré */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Situations Financières</h2>
+            <p className="text-gray-600">{filteredSituations.length} élève(s) trouvé(s)</p>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Élève</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Classe</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">Total Dû</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">Total Payé</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">Solde</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">Statut</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">Dernier Paiement</th>
-                <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">Actions</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Élève</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Classe</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Total Dû</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Total Payé</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Reste</th>
+                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Statut</th>
+                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Dernier Paiement</th>
+                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredSituations.map((situation) => (
-                <tr key={situation.eleve.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
+                <tr key={situation.eleve.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-4">
                     <div className="flex items-center space-x-3">
                       {situation.eleve.photo && (
                         <img 
                           src={situation.eleve.photo} 
                           alt={`${situation.eleve.prenoms} ${situation.eleve.nom}`}
-                          className="h-8 w-8 rounded-full object-cover"
+                          className="h-10 w-10 rounded-full object-cover border-2 border-gray-200"
                         />
                       )}
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-semibold text-gray-900">
                           {situation.eleve.prenoms} {situation.eleve.nom}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 font-mono">
                           {situation.eleve.matricule}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-4 text-sm text-gray-700 font-medium">
                     {situation.classe ? `${situation.classe.niveau} ${situation.classe.section}` : 'Non assigné'}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
+                  <td className="px-4 py-4 text-sm text-gray-900 text-right font-bold">
                     {formatMontant(situation.totalDu)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
+                  <td className="px-4 py-4 text-sm text-green-700 text-right font-bold">
                     {formatMontant(situation.totalPaye)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-right font-medium">
+                  <td className="px-4 py-4 text-sm text-right font-bold">
                     <span className={situation.solde > 0 ? 'text-red-600' : 'text-green-600'}>
-                      {formatMontant(Math.abs(situation.solde))}
+                      {formatMontant(situation.solde)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatutColor(situation.statut)}`}>
+                  <td className="px-4 py-4 text-center">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatutColor(situation.statut)}`}>
+                      {situation.statut === 'Payé' && '✅ '}
+                      {situation.statut === 'Partiel' && '⚠️ '}
+                      {situation.statut === 'Impayé' && '❌ '}
                       {situation.statut}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center text-sm text-gray-600">
-                    {situation.dernierPaiement ? 
-                      new Date(situation.dernierPaiement.datePaiement).toLocaleDateString('fr-FR')
-                      : '-'
-                    }
+                  <td className="px-4 py-4 text-center text-sm text-gray-600">
+                    {situation.dernierPaiement ? (
+                      <div>
+                        <div className="font-medium">
+                          {formatMontant(situation.dernierPaiement.montant)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(situation.dernierPaiement.datePaiement || situation.dernierPaiement.createdAt).toLocaleDateString('fr-FR')}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">Aucun</span>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center space-x-2">
+                  <td className="px-4 py-4">
+                    <div className="flex items-center justify-center space-x-1">
                       <button
                         onClick={() => setShowPaymentForm(true)}
-                        className="p-1 text-green-600 hover:bg-green-50 rounded"
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                         title="Nouveau paiement"
                       >
                         <Plus className="h-4 w-4" />
                       </button>
-                      {situation.dernierPaiement && (
-                        <button
-                          onClick={() => situation.dernierPaiement && handlePrintRecu(situation.eleve, situation.dernierPaiement)}
-                          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                          title="Imprimer reçu"
-                        >
-                          <Printer className="h-4 w-4" />
-                        </button>
+                      
+                      {situation.paiementsEleve.length > 0 && (
+                        <>
+                          <button
+                            onClick={() => handlePrintRecu(situation.eleve)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Imprimer dernier reçu"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </button>
+                          
+                          <button
+                            onClick={() => handlePrintCombinedRecu(situation.eleve)}
+                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                            title="Reçu combiné"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </button>
+                        </>
                       )}
+                      
                       {situation.solde > 0 && (
                         <button
                           onClick={() => handlePrintConvocation(situation.eleve)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Convocation de paiement"
                         >
-                          <FileText className="h-4 w-4" />
+                          <AlertTriangle className="h-4 w-4" />
                         </button>
                       )}
                     </div>
@@ -352,12 +431,14 @@ export default function FinancesList() {
 
         {filteredSituations.length === 0 && (
           <div className="text-center py-12">
-            <DollarSign className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Aucune situation financière trouvée</p>
+            <DollarSign className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">Aucune situation financière trouvée</p>
+            <p className="text-gray-400 text-sm mt-2">Ajustez vos filtres ou ajoutez des élèves</p>
           </div>
         )}
       </div>
 
+      {/* Modals */}
       {showPaymentForm && (
         <PaymentForm
           onSubmit={handlePaymentSubmit}
@@ -367,7 +448,7 @@ export default function FinancesList() {
 
       {showRecuModal && selectedEleve && lastPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <RecuPaiement
               eleve={{
                 nom: selectedEleve.nom,
@@ -377,18 +458,83 @@ export default function FinancesList() {
                         classes.find(c => c.id === selectedEleve.classeId)?.section || ''
               }}
               montantRegle={lastPayment.montant}
-              date={lastPayment.datePaiement}
-              mode={lastPayment.modePaiement}
+              date={lastPayment.datePaiement || lastPayment.createdAt}
+              mode={lastPayment.modePaiement || 'Espèces'}
               cumulReglement={situationsFinancieres.find(s => s.eleve.id === selectedEleve.id)?.totalPaye || 0}
-              resteAPayer={Math.max(0, situationsFinancieres.find(s => s.eleve.id === selectedEleve.id)?.solde || 0)}
+              resteAPayer={situationsFinancieres.find(s => s.eleve.id === selectedEleve.id)?.solde || 0}
               anneeScolaire={classes.find(c => c.id === selectedEleve.classeId)?.anneeScolaire || ''}
-              operateur={lastPayment.operateur}
-              numeroRecu={lastPayment.numeroRecu}
+              operateur={lastPayment.operateur || 'ADMIN'}
+              numeroRecu={lastPayment.numeroRecu || 'REC' + Date.now().toString().slice(-8)}
             />
             <div className="p-4 border-t border-gray-200 flex justify-end">
               <button
                 onClick={() => setShowRecuModal(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCombinedRecuModal && selectedEleve && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CombinedRecu
+              eleve={selectedEleve}
+              paiements={situationsFinancieres.find(s => s.eleve.id === selectedEleve.id)?.paiementsEleve || []}
+              classe={classes.find(c => c.id === selectedEleve.classeId)}
+              anneeScolaire={classes.find(c => c.id === selectedEleve.classeId)?.anneeScolaire}
+            />
+            <div className="p-4 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setShowCombinedRecuModal(false)}
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConvocationModal && selectedEleve && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            {(() => {
+              try {
+                const schedule = computeScheduleForEleve(selectedEleve.id);
+                const echeancesImpayees = schedule.filter(s => s.remaining > 0).map(s => ({
+                  modalite: s.modalite || 1,
+                  date: s.dueDate || s.date || '',
+                  attendu: s.montant || 0,
+                  paye: (s.montant || 0) - (s.remaining || 0),
+                  reste: s.remaining || 0
+                }));
+                const totalDue = echeancesImpayees.reduce((sum, e) => sum + e.reste, 0);
+
+                return (
+                  <Convocation
+                    eleve={selectedEleve}
+                    echeances={echeancesImpayees}
+                    totalDue={totalDue}
+                    classe={classes.find(c => c.id === selectedEleve.classeId)}
+                    anneeScolaire={classes.find(c => c.id === selectedEleve.classeId)?.anneeScolaire}
+                  />
+                );
+              } catch (error) {
+                return (
+                  <div className="p-8 text-center">
+                    <p className="text-red-600">Erreur lors de la génération de la convocation</p>
+                  </div>
+                );
+              }
+            })()}
+            <div className="p-4 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setShowConvocationModal(false)}
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Fermer
               </button>

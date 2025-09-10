@@ -6,7 +6,7 @@ import { Eleve, Classe } from '../../types';
 import { FraisScolaire, Paiement } from '../../types';
 import EnteteFiche from '../EnteteFiche';
 import { getEnteteConfig } from '../../utils/entetesConfig';
-import { openPrintPreviewFromElementId } from '../../utils/printPreview';
+import { isEleveInscrit } from '../../utils/payments';
 
 interface ElevesListProps {
   onEleveSelect: (eleve: Eleve | null) => void;
@@ -156,7 +156,17 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
     const classe = classes.find(c => c.id === eleve.classeId);
     if (!classe) return 'Non défini';
     const frais = fraisScolaires.find(f => f.niveau === classe.niveau && f.anneeScolaire === classe.anneeScolaire);
-    const totalFrais = frais ? (frais.fraisInscription + frais.fraisScolarite + frais.fraisCantine + frais.fraisTransport + frais.fraisFournitures) : 0;
+    const totalFrais = frais ? ((frais.fraisInscription || 0) + (frais.fraisScolarite || 0) + (frais.fraisCantine || 0) + (frais.fraisTransport || 0) + (frais.fraisFournitures || 0)) : 0;
+
+    // Prefer explicit 'inscription' check: consider élève "inscrit" only if modalité 1 is fully paid.
+    try {
+      const inscrit = isEleveInscrit(eleve.id);
+      if (inscrit) return 'Payé';
+    } catch (err) {
+      // if schedule cannot be computed, fall back to total-based heuristic below
+      console.warn('isEleveInscrit check failed for', eleve.id, err);
+    }
+
     const paiementsEleve = paiements.filter(p => p.eleveId === eleve.id);
     const totalPaye = paiementsEleve.reduce((sum, p) => sum + (p.montant || 0), 0);
     if (totalPaye >= totalFrais && totalFrais > 0) return 'Payé';

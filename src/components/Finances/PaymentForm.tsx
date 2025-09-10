@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { db } from '../../utils/database';
-import { Eleve, Classe, Paiement } from '../../types';
+import { Eleve, Classe } from '../../types';
 import { useToast } from '../Layout/ToastProvider';
 import { processPayment } from '../../utils/payments';
 import { computeScheduleForEleve } from '../../utils/payments';
 
 type Props = {
   onCancel: () => void;
-  // onSubmit may receive the created paiement as fifth optional param
-  onSubmit: (eleveId: string, montant: number, type: string, modalite: number | 'auto', paiement?: Paiement) => void;
+  onSubmit: (eleveId: string, montant: number, type: string, modalite: number | 'auto', paiement?: any) => void;
 };
 
 export default function PaymentForm({ onCancel, onSubmit }: Props) {
@@ -24,7 +23,6 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
   const [isSaving, setIsSaving] = useState(false);
 
   const generateNumeroRecu = () => 'REC' + Date.now().toString().slice(-8);
-  type ProcessPaymentResult = { paiement?: { id?: string } } | null;
 
   // auto-select modalite: pick first unpaid échéance modalite if available
   const onEleveChange = (id: string) => {
@@ -54,67 +52,131 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Nouveau paiement</h3>
-          <button className="text-gray-500" onClick={onCancel}>✕</button>
+          <h3 className="text-2xl font-bold text-gray-900">💰 Nouveau Paiement</h3>
+          <button className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors" onClick={onCancel}>✕</button>
         </div>
-        <div className="space-y-3">
+        
+        <div className="space-y-6">
           <div>
-            <label className="block text-sm">Classe</label>
-            <select value={selectedClasse} onChange={e => onClasseChange(e.target.value)} className="border rounded px-2 py-1 w-full mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Classe</label>
+            <select 
+              value={selectedClasse} 
+              onChange={e => onClasseChange(e.target.value)} 
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-500 transition-all"
+            >
               <option value="">-- Toutes les classes --</option>
               {classes.map(c => <option key={c.id} value={c.id}>{c.niveau} {c.section}</option>)}
             </select>
 
-            <label className="block text-sm">Élève</label>
-            <select value={eleveId} onChange={e => onEleveChange(e.target.value)} className="border rounded px-2 py-1 w-full">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 mt-4">Élève</label>
+            <select 
+              value={eleveId} 
+              onChange={e => onEleveChange(e.target.value)} 
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-500 transition-all"
+            >
               <option value="">-- Sélectionner élève --</option>
               {db.getAll<Eleve>('eleves').filter(el => !selectedClasse || el.classeId === selectedClasse).map(el => <option key={el.id} value={el.id}>{el.nom} {el.prenoms} ({el.matricule})</option>)}
             </select>
           </div>
+          
           <div>
-            <label className="block text-sm">Montant</label>
-            <input type="number" value={montant} onChange={e => setMontant(e.target.value)} className="border rounded px-2 py-1 w-full" />
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Montant (FCFA)</label>
+            <input 
+              type="number" 
+              value={montant} 
+              onChange={e => setMontant(e.target.value)} 
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-500 transition-all text-lg font-bold"
+              placeholder="0"
+            />
           </div>
+          
           <div>
-            <label className="block text-sm">Type</label>
-            <select value={type} onChange={e => setType(e.target.value)} className="border rounded px-2 py-1 w-full">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Type de frais</label>
+            <select 
+              value={type} 
+              onChange={e => setType(e.target.value)} 
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-500 transition-all"
+            >
               <option value="scolarite">Scolarité</option>
               <option value="inscription">Inscription</option>
               <option value="cantine">Cantine</option>
+              <option value="transport">Transport</option>
+              <option value="fournitures">Fournitures</option>
             </select>
           </div>
+          
           <div>
-            <label className="block text-sm">Modalité</label>
-            <select value={String(modalite)} onChange={e => setModalite(e.target.value === 'auto' ? 'auto' : Number(e.target.value))} className="border rounded px-2 py-1 w-full">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Modalité de versement</label>
+            <select 
+              value={String(modalite)} 
+              onChange={e => setModalite(e.target.value === 'auto' ? 'auto' : Number(e.target.value))} 
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-500 transition-all"
+            >
               <option value="auto">Auto</option>
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-              <option value={5}>5</option>
-              <option value={6}>6</option>
-              <option value={7}>7</option>
+              <option value={1}>1️⃣ Inscription</option>
+              <option value={2}>2️⃣ Versement 1</option>
+              <option value={3}>3️⃣ Versement 2</option>
+              <option value={4}>4️⃣ Versement 3</option>
+              <option value={5}>5️⃣ Versement 4</option>
+              <option value={6}>6️⃣ Versement 5</option>
+              <option value={7}>7️⃣ Versement 6</option>
             </select>
           </div>
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700">Mode de paiement</label>
-            <select value={mode} onChange={e => setMode(e.target.value as 'espece' | 'mobile' | 'cheque' | 'virement')} className="mt-1 block w-full border rounded px-2 py-1">
-              <option value="espece">Espèces</option>
-              <option value="mobile">Mobile Money</option>
-              <option value="cheque">Chèque</option>
-              <option value="virement">Virement</option>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Mode de paiement</label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: 'espece', label: '💵 Espèces', color: 'green' },
+                { value: 'mobile', label: '📱 Mobile Money', color: 'blue' },
+                { value: 'cheque', label: '📄 Chèque', color: 'purple' },
+                { value: 'virement', label: '🏦 Virement', color: 'indigo' }
+              ].map(modeOption => (
+                <label key={modeOption.value} className={`flex items-center justify-center p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                  mode === modeOption.value 
+                    ? `border-${modeOption.color}-500 bg-${modeOption.color}-50 text-${modeOption.color}-700` 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}>
+                  <input
+                    type="radio"
+                    name="mode"
+                    value={modeOption.value}
+                    checked={mode === modeOption.value}
+                    onChange={(e) => setMode(e.target.value as any)}
+                    className="sr-only"
+                  />
+                  <span className="font-medium text-sm">{modeOption.label}</span>
+                </label>
+              ))}
+            </div>
             </select>
           </div>
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700">Note (optionnel)</label>
-            <textarea value={note} onChange={e => setNote(e.target.value)} className="mt-1 block w-full border rounded px-2 py-1" rows={2} />
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Note ou commentaire (optionnel)</label>
+            <textarea 
+              value={note} 
+              onChange={e => setNote(e.target.value)} 
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-500 transition-all resize-none" 
+              rows={3}
+              placeholder="Commentaire sur ce paiement..."
+            />
           </div>
-          <div className="flex justify-end gap-2">
-            <button className="px-3 py-1 bg-gray-200 rounded" onClick={onCancel} disabled={isSaving}>Annuler</button>
-            <button className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-60" onClick={async () => {
+          
+          <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+            <button 
+              className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-semibold" 
+              onClick={onCancel} 
+              disabled={isSaving}
+            >
+              Annuler
+            </button>
+            <button 
+              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl hover:from-green-700 hover:to-teal-700 transition-all disabled:opacity-50 font-semibold shadow-lg" 
+              onClick={async () => {
               if (!eleveId) { showToast('Sélectionnez un élève', 'error'); return; }
               const m = Number(montant || 0);
               if (!m || m <= 0) { showToast('Montant invalide', 'error'); return; }
@@ -153,7 +215,7 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
                   }
                 } catch (err) { console.debug('preview failed', err); }
                 // call parent handler for compatibility
-                try { const r = res as ProcessPaymentResult; onSubmit(eleveId, m, type, modalite, r?.paiement as Paiement | undefined); } catch (err) { console.debug('onSubmit handler error', err); }
+                try { onSubmit(eleveId, m, type, modalite, res.paiement); } catch (err) { console.debug('onSubmit handler error', err); }
                 showToast('Paiement enregistré', 'success');
                 onCancel();
               } catch (err) {
@@ -162,7 +224,16 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
               } finally {
                 setIsSaving(false);
               }
-            }} disabled={isSaving}>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</button>
+            }} 
+            disabled={isSaving}
+            >
+              {isSaving ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              ) : (
+                <span>💾</span>
+              )}
+              <span>{isSaving ? 'Enregistrement...' : 'Enregistrer le paiement'}</span>
+            </button>
           </div>
         </div>
       </div>

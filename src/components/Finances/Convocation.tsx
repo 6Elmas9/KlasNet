@@ -1,11 +1,10 @@
 import EnteteFiche from '../EnteteFiche';
-import { Eleve, Classe } from '../../types';
 
 interface ConvocationProps {
-  eleve: Eleve;
+  eleve: any;
   echeances: { modalite: number; date: string; attendu: number; paye: number; reste: number }[];
   totalDue: number;
-  classe?: Classe;
+  classe?: any;
   anneeScolaire?: string;
 }
 
