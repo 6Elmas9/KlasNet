@@ -10,6 +10,7 @@ import Convocation from './Convocation';
 import { computeScheduleForEleve } from '../../utils/payments';
 import { openPrintPreviewFromElementId } from '../../utils/printPreview';
 import { echeancesManager } from '../../utils/echeancesManager';
+import ElevePaymentPage from './ElevePaymentPage';
 
 export default function FinancesList() {
   const { showToast } = useToast();
@@ -124,6 +125,21 @@ export default function FinancesList() {
     setTimeout(() => window.location.reload(), 1000);
   };
 
+  const [showElevePaymentPage, setShowElevePaymentPage] = useState(false);
+  const [selectedEleveForPayment, setSelectedEleveForPayment] = useState<Eleve | null>(null);
+
+  const handleOpenElevePaymentPage = (eleve: Eleve) => {
+    setSelectedEleveForPayment(eleve);
+    setShowElevePaymentPage(true);
+  };
+
+  const handleCloseElevePaymentPage = () => {
+    setShowElevePaymentPage(false);
+    setSelectedEleveForPayment(null);
+    // Recharger pour voir les changements
+    setTimeout(() => window.location.reload(), 100);
+  };
+
   const getStatutColor = (statut: string) => {
     switch (statut) {
       case 'Payé': return 'bg-green-100 text-green-800';
@@ -135,15 +151,6 @@ export default function FinancesList() {
 
   const formatMontant = (montant: number) => {
     return new Intl.NumberFormat('fr-FR').format(montant) + ' FCFA';
-  };
-
-  const handlePrintRecu = (eleve: Eleve) => {
-    const situation = situationsFinancieres.find(s => s.eleve.id === eleve.id);
-    if (!situation || !situation.dernierPaiement) return;
-
-    setSelectedEleve(eleve);
-    setLastPayment(situation.dernierPaiement);
-    setShowRecuModal(true);
   };
 
   const handlePrintCombinedRecu = (eleve: Eleve) => {
@@ -196,6 +203,14 @@ export default function FinancesList() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Page de paiement d'un élève spécifique */}
+      {showElevePaymentPage && selectedEleveForPayment ? (
+        <ElevePaymentPage
+          eleve={selectedEleveForPayment}
+          onBack={handleCloseElevePaymentPage}
+        />
+      ) : (
+        <>
       {/* En-tête avec statistiques */}
       <div className="bg-gradient-to-r from-teal-600 to-blue-600 text-white p-6 rounded-xl shadow-lg">
         <div className="flex items-center justify-between mb-4">
@@ -458,32 +473,20 @@ export default function FinancesList() {
                   <td className="px-2 lg:px-4 py-3 lg:py-4">
                     <div className="flex items-center justify-center space-x-1 lg:space-x-2">
                       <button
-                        onClick={() => setShowPaymentForm(true)}
+                        onClick={() => handleOpenElevePaymentPage(situation.eleve)}
                         className="p-1 lg:p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        title="Nouveau paiement"
+                        title="Gérer les paiements"
                       >
                         <Plus className="h-3 w-3 lg:h-4 lg:w-4" />
                       </button>
                       
-                      {situation.paiementsEleve.length > 0 && (
-                        <>
-                          <button
-                            onClick={() => handlePrintRecu(situation.eleve)}
-                            className="p-1 lg:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Imprimer dernier reçu"
-                          >
-                            <Printer className="h-3 w-3 lg:h-4 lg:w-4" />
-                          </button>
-                          
-                          <button
-                            onClick={() => handlePrintCombinedRecu(situation.eleve)}
-                            className="p-1 lg:p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors hidden sm:block"
-                            title="Reçu combiné"
-                          >
-                            <FileText className="h-3 w-3 lg:h-4 lg:w-4" />
-                          </button>
-                        </>
-                      )}
+                      <button
+                        onClick={() => handleOpenElevePaymentPage(situation.eleve)}
+                        className="p-1 lg:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Voir détails et reçus"
+                      >
+                        <Printer className="h-3 w-3 lg:h-4 lg:w-4" />
+                      </button>
                       
                       {situation.solde > 0 && (
                         <button
@@ -519,37 +522,6 @@ export default function FinancesList() {
         />
       )}
 
-      {showRecuModal && selectedEleve && lastPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <RecuPaiement
-              eleve={{
-                nom: selectedEleve.nom,
-                prenoms: selectedEleve.prenoms,
-                matricule: selectedEleve.matricule,
-                classe: classes.find(c => c.id === selectedEleve.classeId)?.niveau + ' ' + 
-                        classes.find(c => c.id === selectedEleve.classeId)?.section || ''
-              }}
-              montantRegle={lastPayment.montant}
-              date={lastPayment.datePaiement || lastPayment.createdAt}
-              mode={lastPayment.modePaiement || 'Espèces'}
-              cumulReglement={situationsFinancieres.find(s => s.eleve.id === selectedEleve.id)?.totalPaye || 0}
-              resteAPayer={situationsFinancieres.find(s => s.eleve.id === selectedEleve.id)?.solde || 0}
-              anneeScolaire={classes.find(c => c.id === selectedEleve.classeId)?.anneeScolaire || ''}
-              operateur={lastPayment.operateur || 'ADMIN'}
-              numeroRecu={lastPayment.numeroRecu || 'REC' + Date.now().toString().slice(-8)}
-            />
-            <div className="p-4 border-t border-gray-200 flex justify-end">
-              <button
-                onClick={() => setShowRecuModal(false)}
-                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showCombinedRecuModal && selectedEleve && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -614,6 +586,8 @@ export default function FinancesList() {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );
