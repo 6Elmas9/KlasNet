@@ -18,6 +18,7 @@ import FinancesList from './components/Finances/FinancesList';
 import Guide from './components/Guide';
 import auth from './utils/auth';
 import { seedDefaults } from './utils/seedDefaults';
+import { initializeDefaultFrais } from './utils/defaultFraisScolaires';
 // types imports removed (not used in this file)
 
 export default function App() {
@@ -34,7 +35,6 @@ export default function App() {
     try {
       seedDefaults();
       // Initialiser les frais scolaires par défaut
-      const { initializeDefaultFrais } = require('./utils/defaultFraisScolaires');
       initializeDefaultFrais();
     } catch (error) {
       console.error('Erreur lors de l\'initialisation des données par défaut:', error);

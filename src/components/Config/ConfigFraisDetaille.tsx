@@ -3,6 +3,7 @@ import { db } from '../../utils/database';
 import { FraisScolaire } from '../../types';
 import { useToast } from '../Layout/ToastProvider';
 import { Save, Plus, Edit2, Trash2, DollarSign, Calendar } from 'lucide-react';
+import { initializeDefaultFrais } from '../../utils/defaultFraisScolaires';
 
 const NIVEAUX = [
   'Petite Section', 'Moyenne Section', 'Grande Section',
@@ -28,7 +29,6 @@ export default function ConfigFraisDetaille() {
     // Initialiser les frais par défaut si aucun n'existe
     const frais = db.getAll<FraisScolaire>('fraisScolaires');
     if (frais.length === 0) {
-      const { initializeDefaultFrais } = require('../../utils/defaultFraisScolaires');
       initializeDefaultFrais();
       loadFrais();
     }
