@@ -55,7 +55,7 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-2xl font-bold text-gray-900">💰 Nouveau Paiement</h3>
+          <h3 className="text-2xl font-bold text-gray-900">Nouveau Paiement</h3>
           <button className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors" onClick={onCancel}>✕</button>
         </div>
         
@@ -116,13 +116,13 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-500 transition-all"
             >
               <option value="auto">Auto</option>
-              <option value={1}>1️⃣ Inscription</option>
-              <option value={2}>2️⃣ Versement 1</option>
-              <option value={3}>3️⃣ Versement 2</option>
-              <option value={4}>4️⃣ Versement 3</option>
-              <option value={5}>5️⃣ Versement 4</option>
-              <option value={6}>6️⃣ Versement 5</option>
-              <option value={7}>7️⃣ Versement 6</option>
+              <option value={1}>1 - Inscription</option>
+              <option value={2}>2 - Versement 1</option>
+              <option value={3}>3 - Versement 2</option>
+              <option value={4}>4 - Versement 3</option>
+              <option value={5}>5 - Versement 4</option>
+              <option value={6}>6 - Versement 5</option>
+              <option value={7}>7 - Versement 6</option>
             </select>
           </div>
           
@@ -130,10 +130,10 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
             <label className="block text-sm font-semibold text-gray-700 mb-2">Mode de paiement</label>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
               {[
-                { value: 'espece', label: '💵 Espèces', color: 'green' },
-                { value: 'mobile', label: '📱 Mobile Money', color: 'blue' },
-                { value: 'cheque', label: '📄 Chèque', color: 'purple' },
-                { value: 'virement', label: '🏦 Virement', color: 'indigo' }
+                { value: 'espece', label: 'Espèces', color: 'green' },
+                { value: 'mobile', label: 'Mobile Money', color: 'blue' },
+                { value: 'cheque', label: 'Chèque', color: 'purple' },
+                { value: 'virement', label: 'Virement', color: 'indigo' }
               ].map(modeOption => (
                 <label key={modeOption.value} className={`flex items-center justify-center p-2 lg:p-3 border-2 rounded-xl cursor-pointer transition-all ${
                   mode === modeOption.value 
@@ -229,9 +229,9 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
               {isSaving ? (
                 <div className="animate-spin rounded-full h-4 w-4 lg:h-5 lg:w-5 border-b-2 border-white"></div>
               ) : (
-                <span>💾</span>
+                <span>Enregistrer</span>
               )}
-              <span className="text-sm lg:text-base">{isSaving ? 'Enregistrement...' : 'Enregistrer le paiement'}</span>
+              <span className="text-sm lg:text-base">{isSaving ? 'Enregistrement...' : 'Paiement'}</span>
             </button>
           </div>
         </div>

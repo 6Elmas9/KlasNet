@@ -6,6 +6,7 @@ import { Eleve, Paiement, FraisScolaire, Classe, Note, Ecole, SituationFinancier
 
 import { format } from 'date-fns';
 import ParamEntetesModal from '../Config/ParamEntetesModal';
+import { echeancesManager } from '../../utils/echeancesManager';
 
 export default function Dashboard() {
   const [showParamEntetes, setShowParamEntetes] = useState(false);
@@ -26,6 +27,10 @@ export default function Dashboard() {
   const classes = db.getAll<Classe>('classes');
   const notes = db.getAll<Note>('notes');
 
+  // Alertes d'échéances intelligentes
+  const alertesEcheances = useMemo(() => {
+    return echeancesManager.getAlertesEcheances();
+  }, []);
   // Alertes : élèves sans notes et paiements en retard
   const elevesSansNotes = useMemo(() => {
     return eleves.filter(eleve => !notes.some(note => note.eleveId === eleve.id));
@@ -150,7 +155,7 @@ export default function Dashboard() {
       {/* En-tête modernisé */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-teal-700 tracking-tight drop-shadow">🎓 Tableau de Bord</h1>
+          <h1 className="text-3xl font-extrabold text-teal-700 tracking-tight drop-shadow">Tableau de Bord</h1>
           <p className="text-base text-blue-600 font-medium mt-1">Vue d'ensemble de l'école - Année scolaire {ecole?.anneeScolaireActive || 'Non configurée'}</p>
         </div>
         <div className="text-right">
@@ -164,14 +169,17 @@ export default function Dashboard() {
         <Info className="h-6 w-6 text-yellow-500 mt-1" />
         <div>
           <h3 className="font-bold text-yellow-700 mb-1">Alertes</h3>
-          {elevesSansNotes.length === 0 && paiementsEnRetard.length === 0 && (
-            <p className="text-sm text-gray-700">Aucune alerte à signaler. Tout est à jour !</p>
+          {elevesSansNotes.length === 0 && paiementsEnRetard.length === 0 && alertesEcheances.echeancesEchues.length === 0 && (
+            <p className="text-sm text-gray-700">Aucune alerte à signaler. Tout est à jour.</p>
           )}
           {elevesSansNotes.length > 0 && (
             <p className="text-sm text-yellow-800 mb-1">{elevesSansNotes.length} élève(s) n'ont aucune note enregistrée.</p>
           )}
-          {paiementsEnRetard.length > 0 && (
-            <p className="text-sm text-yellow-800">{paiementsEnRetard.length} élève(s) ont des paiements en retard.</p>
+          {alertesEcheances.echeancesEchues.length > 0 && (
+            <p className="text-sm text-yellow-800 mb-1">{alertesEcheances.echeancesEchues.length} élève(s) ont des échéances échues.</p>
+          )}
+          {alertesEcheances.echeancesProches.length > 0 && (
+            <p className="text-sm text-yellow-800">{alertesEcheances.echeancesProches.length} échéance(s) arrivent à terme dans les 7 prochains jours.</p>
           )}
         </div>
       </div>

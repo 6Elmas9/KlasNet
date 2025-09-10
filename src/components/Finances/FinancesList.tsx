@@ -9,12 +9,14 @@ import CombinedRecu from './CombinedRecu';
 import Convocation from './Convocation';
 import { computeScheduleForEleve } from '../../utils/payments';
 import { openPrintPreviewFromElementId } from '../../utils/printPreview';
+import { echeancesManager } from '../../utils/echeancesManager';
 
 export default function FinancesList() {
   const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClasse, setFilterClasse] = useState('');
   const [filterStatut, setFilterStatut] = useState('');
+  const [showAlertesEcheances, setShowAlertesEcheances] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showRecuModal, setShowRecuModal] = useState(false);
   const [showCombinedRecuModal, setShowCombinedRecuModal] = useState(false);
@@ -27,39 +29,57 @@ export default function FinancesList() {
   const fraisScolaires = db.getAll<FraisScolaire>('fraisScolaires');
   const classes = db.getAll<Classe>('classes');
 
+  // Alertes d'échéances
+  const alertesEcheances = useMemo(() => {
+    return echeancesManager.getAlertesEcheances();
+  }, []);
   // Calcul des situations financières avec l'ancienne logique
   const situationsFinancieres = useMemo(() => {
     return eleves.map(eleve => {
-      const classe = classes.find(c => c.id === eleve.classeId);
-      const frais = classe ? fraisScolaires.find(f => 
-        f.niveau === classe.niveau && f.anneeScolaire === classe.anneeScolaire
-      ) : undefined;
+      const situationEcheances = echeancesManager.getSituationEcheances(eleve.id);
+      
+      if (situationEcheances) {
+        const paiementsEleve = paiements.filter(p => p.eleveId === eleve.id);
+        let statut: 'Payé' | 'Partiel' | 'Impayé' = 'Impayé';
+        
+        if (situationEcheances.totalRestant <= 0 && situationEcheances.totalDu > 0) {
+          statut = 'Payé';
+        } else if (situationEcheances.totalPaye > 0 && situationEcheances.totalRestant > 0) {
+          statut = 'Partiel';
+        }
 
-      // Calcul du total dû basé sur les échéances
-      let totalDu = 0;
-      if (frais && frais.echeances) {
-        totalDu = frais.echeances.reduce((sum, e) => sum + (e.montant || 0), 0);
+        return {
+          eleve,
+          classe: situationEcheances.classe,
+          totalDu: situationEcheances.totalDu,
+          totalPaye: situationEcheances.totalPaye,
+          solde: situationEcheances.totalRestant,
+          statut,
+          paiementsEleve,
+          dernierPaiement: paiementsEleve.length > 0 ? 
+            paiementsEleve.sort((a, b) => new Date(b.datePaiement || b.createdAt).getTime() - new Date(a.datePaiement || a.createdAt).getTime())[0]
+            : null,
+          situationEcheances
+        };
       }
 
+      // Fallback pour élèves sans frais configurés
+      const classe = classes.find(c => c.id === eleve.classeId);
       const paiementsEleve = paiements.filter(p => p.eleveId === eleve.id);
       const totalPaye = paiementsEleve.reduce((sum, p) => sum + (p.montant || 0), 0);
-      const solde = totalDu - totalPaye;
-
-      let statut: 'Payé' | 'Partiel' | 'Impayé' = 'Impayé';
-      if (solde <= 0 && totalDu > 0) statut = 'Payé';
-      else if (totalPaye > 0 && totalPaye < totalDu) statut = 'Partiel';
 
       return {
         eleve,
         classe,
-        totalDu,
+        totalDu: 0,
         totalPaye,
-        solde: Math.max(0, solde),
-        statut,
+        solde: 0,
+        statut: 'Payé' as const,
         paiementsEleve,
         dernierPaiement: paiementsEleve.length > 0 ? 
           paiementsEleve.sort((a, b) => new Date(b.datePaiement || b.createdAt).getTime() - new Date(a.datePaiement || a.createdAt).getTime())[0]
-          : null
+          : null,
+        situationEcheances: null
       };
     });
   }, [eleves, paiements, fraisScolaires, classes]);
@@ -178,7 +198,7 @@ export default function FinancesList() {
       <div className="bg-gradient-to-r from-teal-600 to-blue-600 text-white p-6 rounded-xl shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold">💰 Gestion Financière</h1>
+            <h1 className="text-3xl font-bold">Gestion Financière</h1>
             <p className="text-teal-100 mt-1">Suivi des paiements et situations financières</p>
           </div>
           <button 
@@ -198,15 +218,15 @@ export default function FinancesList() {
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-green-300">{stats.elevesPayes}</div>
-            <div className="text-teal-100 text-sm">✅ Payés</div>
+            <div className="text-teal-100 text-sm">Payés</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-yellow-300">{stats.elevesPartiels}</div>
-            <div className="text-teal-100 text-sm">⚠️ Partiels</div>
+            <div className="text-teal-100 text-sm">Partiels</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-red-300">{stats.elevesImpayes}</div>
-            <div className="text-teal-100 text-sm">❌ Impayés</div>
+            <div className="text-teal-100 text-sm">Impayés</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold">{formatMontant(stats.totalSolde)}</div>
@@ -248,9 +268,9 @@ export default function FinancesList() {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           >
             <option value="">Tous les statuts</option>
-            <option value="Payé">✅ Payé</option>
-            <option value="Partiel">⚠️ Partiel</option>
-            <option value="Impayé">❌ Impayé</option>
+            <option value="Payé">Payé</option>
+            <option value="Partiel">Partiel</option>
+            <option value="Impayé">Impayé</option>
           </select>
 
           <button 
@@ -365,10 +385,7 @@ export default function FinancesList() {
                   </td>
                   <td className="px-2 lg:px-4 py-3 lg:py-4 text-center">
                     <span className={`px-2 lg:px-3 py-1 rounded-full text-xs font-semibold ${getStatutColor(situation.statut)}`}>
-                      {situation.statut === 'Payé' && '✅ '}
-                      {situation.statut === 'Partiel' && '⚠️ '}
-                      {situation.statut === 'Impayé' && '❌ '}
-                      <span className="hidden lg:inline">{situation.statut}</span>
+                      {situation.statut}
                     </span>
                   </td>
                   <td className="px-2 lg:px-4 py-3 lg:py-4 text-center text-xs lg:text-sm text-gray-600 hidden lg:table-cell">
