@@ -5,6 +5,21 @@ const STORAGE_KEY_CURRENT = 'current_user_id';
 
 export function seedUsers() {
   const users = db.getAll<Utilisateur>('utilisateurs');
+  
+  // Toujours s'assurer que les mots de passe existent
+  const passwords = {
+    'poupouya': 'eyemon2024',
+    'directeur': 'director2024',
+    'enseignant': 'teacher2024'
+  };
+  
+  try { 
+    window.localStorage.setItem('__pw_map__', JSON.stringify(passwords)); 
+    console.log('Mots de passe forcés:', passwords);
+  } catch (e) { 
+    console.error('Erreur stockage mots de passe:', e);
+  }
+  
   if (users && users.length) return;
   
   const now = new Date().toISOString();
@@ -35,21 +50,6 @@ export function seedUsers() {
   defaultUsers.forEach(u => {
     db.create<Utilisateur>('utilisateurs', { ...u, createdAt: now } as any);
   });
-  
-  // Stocker les mots de passe (simple pour app locale)
-  const passwords = {
-    'poupouya': 'eyemon2024',
-    'directeur': 'director2024',
-    'enseignant': 'teacher2024'
-  };
-  
-  console.log('Création des utilisateurs et mots de passe:', passwords);
-  
-  try { 
-    window.localStorage.setItem('__pw_map__', JSON.stringify(passwords)); 
-  } catch (e) { 
-    /* ignore */ 
-  }
 }
 
 export function login(nomUtilisateur: string, motDePasse: string): Utilisateur | null {
