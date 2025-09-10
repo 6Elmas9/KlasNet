@@ -53,8 +53,6 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
 
   const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    setImportFile(file);
     // Si le fichier est .xls (BIFF) : SheetJS peut souvent le lire, mais certains fichiers très anciens ou corrompus
     // peuvent poser problème — demander confirmation avant de continuer.
     if (file.name.toLowerCase().endsWith('.xls')) {
@@ -89,11 +87,11 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
 
   const handleValidateMapping = async () => {
     if (!importFile) return;
-    setShowMappingModal(false);
     setShowImportModal(true);
     const { importerElevesDepuisExcel } = await import('../../utils/excelImportExport');
     const res: any = await importerElevesDepuisExcel(importFile, importMapping);
     setImportPreview(res);
+    setShowImportModal(true);
   };
 
   const handleValidateImport = async () => {
