@@ -1,0 +1,14 @@
+directories:
+  output: release
+  buildResources: build
+appId: com.klasnet.app
+productName: KlasNet
+files:
+  - filter:
+      - dist/**/*
+      - electron/**/*
+win:
+  target:
+    - nsis
+  icon: C:/Users/elmas/Downloads/ChatGPT_Image_26_août_2025__23_29_50-removebg-preview (1).ico
+electronVersion: 29.4.6
