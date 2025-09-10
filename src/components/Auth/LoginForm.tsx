@@ -123,26 +123,6 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             </button>
           </form>
 
-          {/* Connexions rapides pour demo */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-600 text-center mb-4">Connexions rapides (démo)</p>
-            <div className="space-y-2">
-              <button
-                onClick={() => handleQuickLogin('poupouya', 'eyemon2024')}
-                className="w-full text-left p-3 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 transition-colors"
-              >
-                <div className="font-medium text-teal-800">Mme POUPOUYA</div>
-                <div className="text-sm text-teal-600">Secrétaire / Caissière</div>
-              </button>
-              <button
-                onClick={() => handleQuickLogin('directeur', 'director2024')}
-                className="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
-              >
-                <div className="font-medium text-blue-800">M. DIRECTEUR</div>
-                <div className="text-sm text-blue-600">Administrateur</div>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
