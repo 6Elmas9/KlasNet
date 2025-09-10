@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Search, Plus, Download, Upload, Edit2, Eye, Trash2, Filter, Printer } from 'lucide-react';
 import { db } from '../../utils/database';
@@ -95,17 +96,19 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
 
   const handleValidateImport = async () => {
     if (!importClasseId) {
-      alert('Sélectionnez une classe pour l'importation.');
+      alert('Sélectionnez une classe pour l’importation.');
       return;
     }
-    
+    const { db } = await import('../../utils/database');
     importPreview.forEach(eleve => {
+      // Si l'importeur n'a pas fourni d'id, générer un matricule/id en base
       const existing = db.getAll('eleves').find((ex: any) => (
         (ex.matricule && ex.matricule === (eleve.matricule || '')) ||
         (ex.nom === (eleve.nom || '') && ex.prenoms === (eleve.prenoms || ''))
       ));
       if (existing) {
-        db.update('eleves', (existing as any).id, { classeId: importClasseId } as any);
+        // Mettre à jour la classe si nécessaire
+        db.update('eleves', existing.id, { classeId: importClasseId } as any);
       } else {
         const newId = db.generateMatricule();
         db.create('eleves', {
@@ -124,7 +127,6 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
         });
       }
     });
-    
     setShowImportModal(false);
     setImportPreview([]);
     setImportClasseId('');
@@ -528,13 +530,78 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
               <h2 className="text-xl font-bold mb-4">Changer la classe de {selectedEleves.length} élève(s)</h2>
               <select value={newClasseId} onChange={e=>setNewClasseId(e.target.value)} className="w-full mb-4 border rounded px-3 py-2">
                 <option value="">Sélectionner une classe</option>
-                {classes.map(classe => (
-                  <option key={classe.id} value={classe.id}>{classe.niveau} {classe.section}</option>
-                ))}
-              </select>
-              <div className="flex justify-end space-x-2 w-full">
-                <button className="px-4 py-2 bg-gray-200 rounded" onClick={()=>setShowChangeClasse(false)}>Annuler</button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={handleChangeClasse}>Valider</button>
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4">
+              {/* En-tête */}
+              <div className="bg-gradient-to-r from-green-600 to-teal-600 text-white p-6 rounded-t-2xl">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-white bg-opacity-20 p-3 rounded-xl">
+                    <CheckCircle className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Importation Terminée</h2>
+                    <p className="text-green-100 mt-1">Récapitulatif des opérations</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Statistiques */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
+                    <div className="text-2xl font-bold text-green-600">{importSummary.created}</div>
+                    <p className="text-green-800 font-medium text-sm">Élèves créés</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div className="text-2xl font-bold text-blue-600">{importSummary.updated}</div>
+                    <p className="text-blue-800 font-medium text-sm">Élèves mis à jour</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-purple-50 rounded-xl border border-purple-200">
+                    <div className="text-2xl font-bold text-purple-600">{importSummary.paymentsCreated}</div>
+                    <p className="text-purple-800 font-medium text-sm">Paiements créés</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-red-50 rounded-xl border border-red-200">
+                    <div className="text-2xl font-bold text-red-600">{importSummary.errors.length}</div>
+                    <p className="text-red-800 font-medium text-sm">Erreurs</p>
+                  </div>
+                </div>
+
+                {/* Erreurs détaillées */}
+                {importSummary.errors.length > 0 && (
+                  <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+                    <h4 className="font-semibold text-red-900 mb-3 flex items-center">
+                      <AlertTriangle className="h-5 w-5 mr-2" />
+                      Erreurs Détectées
+                    </h4>
+                    <div className="max-h-32 overflow-auto space-y-1">
+                      {importSummary.errors.map((err, i) => (
+                        <div key={i} className="text-sm text-red-700 bg-white rounded p-2 border border-red-200">
+                          • {err}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Message de succès */}
+                {importSummary.created > 0 || importSummary.updated > 0 ? (
+                  <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                    <div className="flex items-center space-x-3">
+                      <CheckCircle className="h-6 w-6 text-green-600" />
+                      <div>
+                        <p className="font-semibold text-green-900">Importation réussie !</p>
+                        <p className="text-green-700 text-sm">
+                          {importSummary.created + importSummary.updated} élève(s) traité(s) avec succès
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+              </div>
+              <div className="flex gap-4 w-full justify-end">
+                <button className="px-4 py-2 bg-gray-400 text-white rounded" onClick={()=>setShowChangeClasse(false)}>Annuler</button>
+                <button className="px-4 py-2 bg-teal-600 text-white rounded font-bold" onClick={handleChangeClasse} disabled={!newClasseId}>Valider</button>
               </div>
             </div>
           </div>
