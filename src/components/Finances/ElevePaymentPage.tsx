@@ -94,6 +94,46 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
     }
   };
 
+  const handleReglerEcheancesAvecOptions = async (modePaiement: string = 'Espèces') => {
+    if (selectedEcheances.length === 0) {
+      showToast('Sélectionnez au moins une échéance à régler', 'error');
+      return;
+    }
+
+    try {
+      const numeroRecu = 'REC' + Date.now().toString().slice(-8);
+      const result = echeancesManager.processPaymentIntelligent(
+        eleve.id,
+        montantTotal,
+        new Date().toISOString(),
+        {
+          typeFrais: 'scolarite',
+          modePaiement,
+          numeroRecu,
+          operateur: 'ADMIN',
+          notes: `Règlement de ${selectedEcheances.length} échéance(s) - ${modePaiement}`
+        }
+      );
+
+      // Ajouter à l'historique
+      db.addHistorique({
+        type: 'paiement',
+        cible: 'Paiement',
+        description: `Paiement de ${montantTotal.toLocaleString('fr-FR')} FCFA pour ${eleve.prenoms} ${eleve.nom} (${numeroRecu})`,
+        utilisateur: 'ADMIN'
+      });
+
+      showToast(`Paiement de ${montantTotal.toLocaleString('fr-FR')} FCFA enregistré avec succès`, 'success');
+      setSelectedEcheances([]);
+      
+      // Recharger la page pour voir les changements
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error) {
+      console.error('Erreur paiement:', error);
+      showToast('Erreur lors de l\'enregistrement du paiement', 'error');
+    }
+  };
+
   const handlePrintRecu = (paiement: Paiement) => {
     setSelectedPaiementForRecu(paiement);
     setShowRecuModal(true);
@@ -108,9 +148,9 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
   };
 
   const getEcheanceStatusColor = (echeance: any) => {
-    if (echeance.montantRestant === 0) return 'bg-green-100 text-green-800 border-green-200';
-    if (echeance.isEchue) return 'bg-red-100 text-red-800 border-red-200';
-    return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    if (echeance.montantRestant === 0) return 'bg-green-50 text-green-700 border-green-300';
+    if (echeance.isEchue) return 'bg-red-50 text-red-700 border-red-300';
+    return 'bg-yellow-50 text-yellow-700 border-yellow-300';
   };
 
   const getEcheanceStatusIcon = (echeance: any) => {
@@ -141,58 +181,73 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
   return (
     <div className="p-6 space-y-6">
       {/* En-tête avec navigation */}
-      <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-teal-600 to-blue-600 text-white p-6 rounded-2xl shadow-lg">
         <div className="flex items-center space-x-4">
           <button
             onClick={onBack}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center space-x-2 text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded-xl transition-all"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Retour aux finances</span>
+            <span className="font-medium">Retour aux finances</span>
           </button>
-          <div className="h-6 w-px bg-gray-300"></div>
+          <div className="h-6 w-px bg-white bg-opacity-30"></div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold">
               {eleve.prenoms} {eleve.nom}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-teal-100">
               {classe ? `${classe.niveau} ${classe.section}` : 'Classe non assignée'} • {eleve.matricule}
             </p>
           </div>
         </div>
         
-        <div className="text-right">
-          <div className="text-sm text-gray-500">Reste à payer</div>
-          <div className="text-2xl font-bold text-red-600">
+        <div className="text-right bg-white bg-opacity-20 rounded-xl p-4">
+          <div className="text-sm text-teal-100">Reste à payer</div>
+          <div className="text-2xl font-bold text-white">
             {situationEcheances.totalRestant.toLocaleString('fr-FR')} FCFA
+          </div>
+          <div className="text-sm text-teal-100 mt-1">
+            sur {situationEcheances.totalDu.toLocaleString('fr-FR')} FCFA
           </div>
         </div>
       </div>
 
       {/* Résumé financier */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-blue-50 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+            <DollarSign className="h-6 w-6 text-blue-600" />
+          </div>
           <div className="text-2xl font-bold text-gray-900">
             {situationEcheances.totalDu.toLocaleString('fr-FR')}
           </div>
           <p className="text-gray-600 text-sm">Total dû (FCFA)</p>
         </div>
         
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-green-50 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+            <CheckCircle className="h-6 w-6 text-green-600" />
+          </div>
           <div className="text-2xl font-bold text-green-600">
             {situationEcheances.totalPaye.toLocaleString('fr-FR')}
           </div>
           <p className="text-gray-600 text-sm">Total payé (FCFA)</p>
         </div>
         
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-red-50 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+          </div>
           <div className="text-2xl font-bold text-red-600">
             {situationEcheances.totalRestant.toLocaleString('fr-FR')}
           </div>
           <p className="text-gray-600 text-sm">Reste à payer (FCFA)</p>
         </div>
         
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-orange-50 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+            <Clock className="h-6 w-6 text-orange-600" />
+          </div>
           <div className="text-2xl font-bold text-orange-600">
             {situationEcheances.echeancesEchues.length}
           </div>
@@ -201,13 +256,16 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
       </div>
 
       {/* Échéances à payer */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-lg">
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Échéances de paiement</h2>
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+              <span className="bg-teal-100 p-2 rounded-lg mr-3">💳</span>
+              Échéances de paiement
+            </h2>
             <div className="flex items-center space-x-4">
               {selectedEcheances.length > 0 && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 bg-teal-50 px-3 py-1 rounded-lg border border-teal-200">
                   {selectedEcheances.length} sélectionnée(s) • {montantTotal.toLocaleString('fr-FR')} FCFA
                 </div>
               )}
@@ -216,9 +274,9 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
                   type="checkbox"
                   checked={selectedEcheances.length === situationEcheances.echeances.filter(e => e.montantRestant > 0).length}
                   onChange={(e) => handleSelectAllEcheances(e.target.checked)}
-                  className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                  className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
                 />
-                <span className="text-sm text-gray-700">Tout sélectionner</span>
+                <span className="text-sm text-gray-700 font-medium">Tout sélectionner</span>
               </label>
             </div>
           </div>
@@ -242,7 +300,7 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
                         type="checkbox"
                         checked={selectedEcheances.includes(echeance.echeanceId)}
                         onChange={(e) => handleSelectEcheance(echeance.echeanceId, e.target.checked)}
-                        className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                        className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 transform scale-110"
                       />
                     )}
                     <div className="flex items-center space-x-3">
@@ -283,7 +341,7 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
 
           {/* Bouton de règlement */}
           {selectedEcheances.length > 0 && (
-            <div className="mt-6 p-4 bg-teal-50 rounded-lg border border-teal-200">
+            <div className="mt-6 p-6 bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl border border-teal-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-teal-900">
@@ -293,13 +351,29 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
                     Montant total : {montantTotal.toLocaleString('fr-FR')} FCFA
                   </p>
                 </div>
-                <button
-                  onClick={handleReglerEcheances}
-                  className="flex items-center space-x-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-semibold"
-                >
-                  <CreditCard className="h-5 w-5" />
-                  <span>Régler maintenant</span>
-                </button>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => handleReglerEcheancesAvecOptions('Espèces')}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    <span>💵</span>
+                    <span>Espèces</span>
+                  </button>
+                  <button
+                    onClick={() => handleReglerEcheancesAvecOptions('Mobile Money')}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    <span>📱</span>
+                    <span>Mobile</span>
+                  </button>
+                  <button
+                    onClick={() => handleReglerEcheancesAvecOptions('Chèque')}
+                    className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    <span>Chèque</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -307,13 +381,16 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
       </div>
 
       {/* Historique des paiements */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-lg">
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Historique des paiements</h2>
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+              <span className="bg-blue-100 p-2 rounded-lg mr-3">📋</span>
+              Historique des paiements
+            </h2>
             <div className="flex items-center space-x-4">
               {selectedPaiements.length > 0 && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-200">
                   {selectedPaiements.length} sélectionné{selectedPaiements.length > 1 ? 's' : ''}
                 </div>
               )}
@@ -322,9 +399,9 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
                   type="checkbox"
                   checked={selectedPaiements.length === paiements.length && paiements.length > 0}
                   onChange={(e) => handleSelectAllPaiements(e.target.checked)}
-                  className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                  className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
                 />
-                <span className="text-sm text-gray-700">Tout sélectionner</span>
+                <span className="text-sm text-gray-700 font-medium">Tout sélectionner</span>
               </label>
             </div>
           </div>
@@ -335,6 +412,7 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
             <div className="text-center py-8">
               <Receipt className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">Aucun paiement enregistré</p>
+              <p className="text-gray-400 text-sm mt-1">Les paiements apparaîtront ici une fois effectués</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -353,7 +431,7 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
                         type="checkbox"
                         checked={selectedPaiements.includes(paiement.id)}
                         onChange={(e) => handleSelectPaiement(paiement.id, e.target.checked)}
-                        className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                        className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 transform scale-110"
                       />
                       <div>
                         <h3 className="font-semibold text-gray-900">
@@ -372,7 +450,7 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
                     
                     <button
                       onClick={() => handlePrintRecu(paiement)}
-                      className="flex items-center space-x-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors font-medium"
                     >
                       <Printer className="h-4 w-4" />
                       <span>Reçu</span>
@@ -385,17 +463,23 @@ export default function ElevePaymentPage({ eleve, onBack }: ElevePaymentPageProp
 
           {/* Actions sur les paiements sélectionnés */}
           {selectedPaiements.length > 0 && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-blue-900">
                     Actions sur {selectedPaiements.length} paiement{selectedPaiements.length > 1 ? 's' : ''}
                   </h3>
+                  <p className="text-blue-700 text-sm mt-1">
+                    Montant total : {selectedPaiements.reduce((sum, id) => {
+                      const p = paiements.find(paiement => paiement.id === id);
+                      return sum + (p?.montant || 0);
+                    }, 0).toLocaleString('fr-FR')} FCFA
+                  </p>
                 </div>
                 <div className="flex space-x-3">
                   <button
                     onClick={handlePrintCombinedRecu}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-semibold shadow-lg"
                   >
                     <FileText className="h-4 w-4" />
                     <span>Reçu combiné</span>

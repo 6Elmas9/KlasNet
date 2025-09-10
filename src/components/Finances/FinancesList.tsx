@@ -194,6 +194,11 @@ export default function FinancesList() {
     setShowRecuModal(true);
   };
 
+  // Navigation vers la page de paiement dédiée
+  const handleOpenPaymentPage = (eleve: Eleve) => {
+    handleOpenElevePaymentPage(eleve);
+  };
+
   // Statistiques financières
   const stats = useMemo(() => {
     const totalRecettes = paiements.reduce((sum, p) => sum + (p.montant || 0), 0);
@@ -230,13 +235,15 @@ export default function FinancesList() {
             <h1 className="text-3xl font-bold">Gestion Financière</h1>
             <p className="text-teal-100 mt-1">Suivi des paiements et situations financières</p>
           </div>
-          <button 
-            onClick={() => setShowPaymentForm(true)}
-            className="flex items-center space-x-2 px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl transition-all"
-          >
-            <Plus className="h-5 w-5" />
-            <span className="font-semibold">Nouveau Paiement</span>
-          </button>
+          <div className="flex space-x-3">
+            <button 
+              onClick={() => setShowPaymentForm(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl transition-all"
+            >
+              <Plus className="h-5 w-5" />
+              <span className="font-semibold">Paiement Rapide</span>
+            </button>
+          </div>
         </div>
 
         {/* Alertes d'échéances */}
@@ -436,7 +443,11 @@ export default function FinancesList() {
                           className="h-8 w-8 lg:h-10 lg:w-10 rounded-full object-cover border-2 border-gray-200"
                         />
                       )}
-                      <div>
+                      <div 
+                        className="cursor-pointer hover:text-teal-600 transition-colors"
+                        onClick={() => handleOpenPaymentPage(situation.eleve)}
+                        title="Cliquer pour ouvrir la page de paiement"
+                      >
                         <div className="text-xs lg:text-sm font-semibold text-gray-900">
                           {situation.eleve.prenoms} {situation.eleve.nom}
                         </div>
@@ -485,9 +496,9 @@ export default function FinancesList() {
                   <td className="px-2 lg:px-4 py-3 lg:py-4">
                     <div className="flex items-center justify-center space-x-1 lg:space-x-2">
                       <button
-                        onClick={() => setShowPaymentForm(true)}
-                        className="p-1 lg:p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        title="Nouveau paiement"
+                        onClick={() => handleOpenPaymentPage(situation.eleve)}
+                        className="p-1 lg:p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                        title="Ouvrir page de paiement"
                       >
                         <Plus className="h-3 w-3 lg:h-4 lg:w-4" />
                       </button>
