@@ -93,16 +93,20 @@ export default function Dashboard() {
       // Trouver la classe de l'élève puis chercher les frais pour son niveau/année
       const classeObj = classes.find(c => c.id === eleve.classeId);
       const frais = classeObj ? fraisScolaires.find(f => f.niveau === classeObj.niveau && f.anneeScolaire === classeObj.anneeScolaire) : undefined;
-      const totalDu = frais ? 
-        (frais.fraisInscription || 0) + (frais.fraisScolarite || 0) + (frais.fraisCantine || 0) + (frais.fraisTransport || 0) + (frais.fraisFournitures || 0)
-        : 0;
+      
+      // Calculer le total dû à partir des échéances
+      let totalDu = 0;
+      if (frais && frais.echeances && frais.echeances.length > 0) {
+        totalDu = frais.echeances.reduce((sum, echeance) => sum + (echeance.montant || 0), 0);
+      }
 
       const paiementsEleve = paiements.filter(p => p.eleveId === eleve.id);
       const totalPaye = paiementsEleve.reduce((sum, p) => sum + p.montant, 0);
       const solde = totalDu - totalPaye;
 
       let statut: SituationFinanciere['statut'] = 'Non Payé';
-      if (solde <= 0) statut = 'Payé';
+      if (totalDu > 0 && solde <= 0) statut = 'Payé';
+      else if (totalDu === 0) statut = 'Non Payé'; // Pas de frais configurés = Non Payé
       else if (totalPaye > 0) statut = 'Partiellement Payé';
 
       return { eleveId: eleve.id, statut, solde };

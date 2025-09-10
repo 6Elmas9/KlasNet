@@ -176,13 +176,24 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
   function getStatutFinancier(eleve: Eleve): 'Payé' | 'Partiel' | 'Impayé' | 'Non défini' {
     const classe = classes.find(c => c.id === eleve.classeId);
     if (!classe) return 'Non défini';
+    
     const frais = fraisScolaires.find(f => f.niveau === classe.niveau && f.anneeScolaire === classe.anneeScolaire);
-    const totalFrais = frais ? ((frais.fraisInscription || 0) + (frais.fraisScolarite || 0) + (frais.fraisCantine || 0) + (frais.fraisTransport || 0) + (frais.fraisFournitures || 0)) : 0;
+    
+    // Calculer le total des frais à partir des échéances
+    let totalFrais = 0;
+    if (frais && frais.echeances && frais.echeances.length > 0) {
+      totalFrais = frais.echeances.reduce((sum, echeance) => sum + (echeance.montant || 0), 0);
+    }
 
     // Prefer explicit 'inscription' check: consider élève "inscrit" only if modalité 1 is fully paid.
     try {
       const inscrit = isEleveInscrit(eleve.id);
-      if (inscrit) return 'Payé';
+      if (inscrit && totalFrais > 0) {
+        const paiementsEleve = paiements.filter(p => p.eleveId === eleve.id);
+        const totalPaye = paiementsEleve.reduce((sum, p) => sum + (p.montant || 0), 0);
+        if (totalPaye >= totalFrais) return 'Payé';
+        if (totalPaye > 0) return 'Partiel';
+      }
     } catch (err) {
       // if schedule cannot be computed, fall back to total-based heuristic below
       console.warn('isEleveInscrit check failed for', eleve.id, err);
@@ -190,10 +201,13 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
 
     const paiementsEleve = paiements.filter(p => p.eleveId === eleve.id);
     const totalPaye = paiementsEleve.reduce((sum, p) => sum + (p.montant || 0), 0);
+    
+    // Si aucun frais configuré, retourner Non défini
+    if (totalFrais === 0) return 'Non défini';
+    
     if (totalPaye >= totalFrais && totalFrais > 0) return 'Payé';
     if (totalPaye > 0 && totalPaye < totalFrais) return 'Partiel';
-    if (totalPaye === 0 && totalFrais > 0) return 'Impayé';
-    return 'Non défini';
+    return 'Impayé';
   }
 
   function getStatutFinancierColor(statut: string) {

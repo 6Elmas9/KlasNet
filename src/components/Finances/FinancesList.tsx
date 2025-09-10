@@ -46,6 +46,8 @@ export default function FinancesList() {
           statut = 'Payé';
         } else if (situationEcheances.totalPaye > 0 && situationEcheances.totalRestant > 0) {
           statut = 'Partiel';
+        } else if (situationEcheances.totalDu > 0 && situationEcheances.totalPaye === 0) {
+          statut = 'Impayé';
         }
 
         return {
