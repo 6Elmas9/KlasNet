@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LicenceGuard from './components/Licence/LicenceGuard';
 import { ToastProvider } from './components/Layout/ToastProvider';
 import LoginForm from './components/Auth/LoginForm';
 import Header from './components/Layout/Header';
@@ -185,19 +186,21 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-gray-50">
-        <Header
-          currentUser={currentUser}
-          onLogout={handleLogout}
-          onNavigate={handleNavigate}
-          currentPage={currentPage}
-          onShowGuide={() => setShowGuide(true)}
-        />
-        <main className="pb-8">
-          {renderContent()}
-        </main>
-        {showGuide && <Guide onClose={() => setShowGuide(false)} />}
-      </div>
+      <LicenceGuard>
+        <div className="min-h-screen bg-gray-50">
+          <Header
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+            currentPage={currentPage}
+            onShowGuide={() => setShowGuide(true)}
+          />
+          <main className="pb-8">
+            {renderContent()}
+          </main>
+          {showGuide && <Guide onClose={() => setShowGuide(false)} />}
+        </div>
+      </LicenceGuard>
     </ToastProvider>
   );
 }

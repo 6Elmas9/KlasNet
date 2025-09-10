@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { db } from '../../utils/database';
-import { Building2, DollarSign, BookOpen, FileText, Settings, Database, History, GraduationCap } from 'lucide-react';
+import { Building2, DollarSign, BookOpen, FileText, Settings, Database, History, GraduationCap, Shield } from 'lucide-react';
 import ConfigEcole from './ConfigEcole';
 import ConfigFraisDetaille from './ConfigFraisDetaille';
 import ConfigCompositions from './ConfigCompositions';
 import ConfigImpression from './ConfigImpression';
 import ConfigBackup from './ConfigBackup';
-import HistoriqueList from './HistoriqueList';
 
-type ConfigSection = 'menu' | 'ecole' | 'frais' | 'compositions' | 'impression' | 'backup' | 'historique';
+import HistoriqueList from './HistoriqueList';
+import ConfigLicence from './ConfigLicence';
+
+type ConfigSection = 'menu' | 'ecole' | 'frais' | 'compositions' | 'impression' | 'backup' | 'historique' | 'licence';
 
 const configSections = [
   {
@@ -64,6 +66,15 @@ const configSections = [
     color: 'from-gray-500 to-gray-600',
     bgColor: 'bg-gray-50',
     textColor: 'text-gray-600'
+  },
+  {
+    id: 'licence' as ConfigSection,
+    title: 'Gestion des Licences',
+    description: 'Activation et statut de la licence logicielle',
+    icon: Shield,
+    color: 'from-purple-500 to-purple-600',
+    bgColor: 'bg-purple-50',
+    textColor: 'text-purple-600'
   }
 ];
 
@@ -84,6 +95,8 @@ export default function ConfigMain() {
         return <ConfigBackup />;
       case 'historique':
         return <HistoriqueList />;
+      case 'licence':
+        return <ConfigLicence />;
       default:
         return (
           <div className="max-w-6xl mx-auto">

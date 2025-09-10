@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, Download, Upload, Edit2, Eye, Trash2, Filter, Printer, DollarSign, Users, FileText, AlertTriangle } from 'lucide-react';
+import { Search, Plus, DollarSign, FileText, AlertTriangle, Printer } from 'lucide-react';
 import { db } from '../../utils/database';
 import { Eleve, Classe, Paiement, FraisScolaire } from '../../types';
 import { useToast } from '../Layout/ToastProvider';

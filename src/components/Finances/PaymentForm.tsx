@@ -152,7 +152,6 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
                 </label>
               ))}
             </div>
-            </select>
           </div>
           
           <div>
