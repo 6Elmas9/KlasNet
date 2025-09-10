@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Print helpers: hide everything except #print-area when printing */
+@media print {
+	/* hide elements marked no-print */
+	.no-print { display: none !important; }
+
+	/* make only the print-area visible */
+	body * { visibility: hidden; }
+	#print-area, #print-area * { visibility: visible; }
+	#print-area { position: absolute; left: 0; top: 0; width: 100%; }
+
+	/* smaller font for compact prints */
+	.print-compact { font-size: 11px; line-height: 1.5; font-family: 'Times New Roman', Times, serif; }
+
+	/* Slightly lower the main libelle/header for print */
+	.entete-libelle { margin-top: 0.25rem; }
+
+	/* Ensure tables use Times New Roman and proper spacing */
+	#print-area table, #print-area th, #print-area td {
+		font-family: 'Times New Roman', Times, serif;
+		line-height: 1.5;
+	}
+}
