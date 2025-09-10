@@ -43,6 +43,8 @@ export function seedUsers() {
     'enseignant': 'teacher2024'
   };
   
+  console.log('Création des utilisateurs et mots de passe:', passwords);
+  
   try { 
     window.localStorage.setItem('__pw_map__', JSON.stringify(passwords)); 
   } catch (e) { 
@@ -56,6 +58,9 @@ export function login(nomUtilisateur: string, motDePasse: string): Utilisateur |
   const passwordMap = JSON.parse(
     String(window.localStorage.getItem('__pw_map__') || '{}')
   ) as Record<string, string>;
+  
+  console.log('Tentative de connexion:', nomUtilisateur);
+  console.log('Mots de passe disponibles:', Object.keys(passwordMap));
   
   if (passwordMap[nomUtilisateur] !== motDePasse) return null;
   
