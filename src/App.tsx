@@ -33,6 +33,9 @@ export default function App() {
     if (!currentUser) return;
     try {
       seedDefaults();
+      // Initialiser les frais scolaires par défaut
+      const { initializeDefaultFrais } = require('./utils/defaultFraisScolaires');
+      initializeDefaultFrais();
     } catch (error) {
       console.error('Erreur lors de l\'initialisation des données par défaut:', error);
     }

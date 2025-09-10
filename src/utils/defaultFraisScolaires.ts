@@ -1,6 +1,6 @@
 import { db } from './database';
 
-type Echeance = { modalite: number; label: string; date: string; montant: number };
+type Echeance = { modalite: number; label: string; date: string; montant: number; id: string };
 
 function parseStartYear(annee: string) {
   const parts = annee.split('-');
@@ -12,7 +12,7 @@ export function getDefaultFraisForNiveau(niveau: string, annee: string) {
   const start = parseStartYear(annee);
   const next = start + 1;
 
-  // modality dates
+  // Dates des modalités
   const dates = [
     `${start}-09-01`, // inscription (septembre)
     `${start}-10-05`, // 1er versement
@@ -58,13 +58,13 @@ export function getDefaultFraisForNiveau(niveau: string, annee: string) {
 
   // Build echeances array (modalite numbering 1..7)
   const echeances: Echeance[] = [
-    { modalite: 1, label: 'Inscription', date: dates[0], montant: inscription },
-    { modalite: 2, label: 'Versement 1', date: dates[1], montant: v1 },
-    { modalite: 3, label: 'Versement 2', date: dates[2], montant: v2 },
-    { modalite: 4, label: 'Versement 3', date: dates[3], montant: 10000 },
-    { modalite: 5, label: 'Versement 4', date: dates[4], montant: 10000 },
-    { modalite: 6, label: 'Versement 5', date: dates[5], montant: 10000 },
-    { modalite: 7, label: 'Versement 6', date: dates[6], montant: 10000 },
+    { modalite: 1, label: 'Inscription', date: dates[0], montant: inscription, id: `${niveau}-1` },
+    { modalite: 2, label: 'Versement 1', date: dates[1], montant: v1, id: `${niveau}-2` },
+    { modalite: 3, label: 'Versement 2', date: dates[2], montant: v2, id: `${niveau}-3` },
+    { modalite: 4, label: 'Versement 3', date: dates[3], montant: 10000, id: `${niveau}-4` },
+    { modalite: 5, label: 'Versement 4', date: dates[4], montant: 10000, id: `${niveau}-5` },
+    { modalite: 6, label: 'Versement 5', date: dates[5], montant: 10000, id: `${niveau}-6` },
+    { modalite: 7, label: 'Versement 6', date: dates[6], montant: 10000, id: `${niveau}-7` },
   ];
 
   const total = echeances.reduce((s, e) => s + e.montant, 0);
@@ -73,7 +73,14 @@ export function getDefaultFraisForNiveau(niveau: string, annee: string) {
     niveau,
     anneeScolaire: annee,
     montant: total,
-    echeances: echeances.map(e => ({ date: e.date, montant: e.montant, modalite: e.modalite, label: e.label }))
+    fraisInscription: 0,
+    echeances: echeances.map(e => ({ 
+      date: e.date, 
+      montant: e.montant, 
+      modalite: e.modalite, 
+      label: e.label,
+      id: e.id 
+    }))
   };
 }
 
@@ -84,7 +91,8 @@ const NIVEAUX = [
 
 export function ensureDefaultFrais(annee: string) {
   const existing = db.getAll<any>('fraisScolaires') || [];
-  // migration: convert legacy 'annee' property to 'anneeScolaire' if present
+  
+  // Migration: convert legacy 'annee' property to 'anneeScolaire' if present
   existing.forEach((f: any) => {
     if (f && f.annee && !f.anneeScolaire) {
       try {
@@ -94,6 +102,7 @@ export function ensureDefaultFrais(annee: string) {
       }
     }
   });
+  
   let created = 0;
   NIVEAUX.forEach(niveau => {
     const found = (db.getAll<any>('fraisScolaires') || []).find((f: any) => f.niveau === niveau && f.anneeScolaire === annee);
@@ -103,5 +112,15 @@ export function ensureDefaultFrais(annee: string) {
       created++;
     }
   });
+  return created;
+}
+
+// Fonction pour initialiser les frais par défaut au démarrage
+export function initializeDefaultFrais() {
+  const anneeActive = '2025-2026';
+  const created = ensureDefaultFrais(anneeActive);
+  if (created > 0) {
+    console.log(`Frais scolaires initialisés: ${created} niveaux créés pour ${anneeActive}`);
+  }
   return created;
 }

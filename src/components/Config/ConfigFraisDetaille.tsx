@@ -25,6 +25,13 @@ export default function ConfigFraisDetaille() {
 
   useEffect(() => {
     loadFrais();
+    // Initialiser les frais par défaut si aucun n'existe
+    const frais = db.getAll<FraisScolaire>('fraisScolaires');
+    if (frais.length === 0) {
+      const { initializeDefaultFrais } = require('../../utils/defaultFraisScolaires');
+      initializeDefaultFrais();
+      loadFrais();
+    }
   }, []);
 
   const loadFrais = () => {
@@ -273,6 +280,9 @@ export default function ConfigFraisDetaille() {
               <div className="bg-gray-50 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-gray-900">Échéances de paiement</h4>
+                  <div className="text-sm text-gray-600">
+                    Total: {formData.echeances.reduce((sum, e) => sum + e.montant, 0).toLocaleString('fr-FR')} FCFA
+                  </div>
                   <button
                     onClick={addEcheance}
                     className="flex items-center space-x-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
