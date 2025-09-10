@@ -214,12 +214,12 @@ export default function ConfigFraisDetaille() {
                                 </span>
                                 <span className="text-xs text-gray-500">
                                   {new Date(echeance.date).toLocaleDateString('fr-FR')}
-                                <p className="text-xs text-gray-600 font-medium">{echeance.label || `Modalité ${echeance.modalite}`}</p>
+                                </span>
                               </div>
+                              <p className="text-xs text-gray-600 font-medium">{echeance.label || `Modalité ${echeance.modalite}`}</p>
                               <p className="font-bold text-gray-900">
                                 {(echeance.montant || 0).toLocaleString('fr-FR')} FCFA
                               </p>
-                              <p className="text-xs text-gray-600">{echeance.label}</p>
                             </div>
                           ))}
                         </div>
