@@ -115,7 +115,7 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
 
   const handleValidateImport = async () => {
     if (!importClasseId) {
-      alert('Sélectionnez une classe pour l'importation.');
+      alert("Sélectionnez une classe pour l'importation.");
       return;
     }
     const { db } = await import('../../utils/database');
@@ -546,6 +546,7 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
         {showChangeClasse && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
             <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full flex flex-col items-center">
+              <>
               <h2 className="text-xl font-bold mb-4">Changer la classe de {selectedEleves.length} élève(s)</h2>
               <select value={newClasseId} onChange={e=>setNewClasseId(e.target.value)} className="w-full mb-4 border rounded px-3 py-2">
                 <option value="">Sélectionner une classe</option>
@@ -557,6 +558,7 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
                 <button className="px-4 py-2 bg-gray-200 rounded" onClick={()=>setShowChangeClasse(false)}>Annuler</button>
                 <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={handleChangeClasse}>Valider</button>
               </div>
+              </>
             </div>
           </div>
         )}
