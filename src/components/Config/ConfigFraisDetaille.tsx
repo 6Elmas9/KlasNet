@@ -214,7 +214,7 @@ export default function ConfigFraisDetaille() {
                                 </span>
                                 <span className="text-xs text-gray-500">
                                   {new Date(echeance.date).toLocaleDateString('fr-FR')}
-                                </span>
+                                <p className="text-xs text-gray-600 font-medium">{echeance.label || `Modalité ${echeance.modalite}`}</p>
                               </div>
                               <p className="font-bold text-gray-900">
                                 {(echeance.montant || 0).toLocaleString('fr-FR')} FCFA
@@ -293,7 +293,7 @@ export default function ConfigFraisDetaille() {
                             min="1"
                             value={echeance.modalite}
                             onChange={(e) => updateEcheance(index, 'modalite', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-center font-bold"
                           />
                         </div>
                         
@@ -303,7 +303,7 @@ export default function ConfigFraisDetaille() {
                             type="text"
                             value={echeance.label}
                             onChange={(e) => updateEcheance(index, 'label', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent font-medium"
                             placeholder="Ex: Inscription, Versement 1..."
                           />
                         </div>
@@ -314,7 +314,7 @@ export default function ConfigFraisDetaille() {
                             type="date"
                             value={echeance.date}
                             onChange={(e) => updateEcheance(index, 'date', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent font-mono"
                           />
                         </div>
                         
@@ -325,7 +325,7 @@ export default function ConfigFraisDetaille() {
                             min="0"
                             value={echeance.montant}
                             onChange={(e) => updateEcheance(index, 'montant', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-right font-bold text-green-700"
                           />
                         </div>
                         
@@ -349,6 +349,9 @@ export default function ConfigFraisDetaille() {
                     <span className="text-2xl font-bold text-blue-700">
                       {formData.echeances.reduce((sum, e) => sum + e.montant, 0).toLocaleString('fr-FR')} FCFA
                     </span>
+                  </div>
+                  <div className="mt-2 text-sm text-blue-600">
+                    {formData.echeances.length} modalité(s) de paiement configurée(s)
                   </div>
                 </div>
               </div>

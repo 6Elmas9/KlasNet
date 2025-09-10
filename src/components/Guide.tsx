@@ -5,7 +5,7 @@ import { Users, DollarSign, BookOpen, Settings, Search, AlertTriangle, TrendingU
 const steps = [
   {
     title: "Bienvenue sur KlasNet !",
-    description: "Bienvenue dans votre application de gestion scolaire KlasNet ! Ce guide va vous accompagner pas à pas pour découvrir chaque fonctionnalité. Prenez le temps de lire chaque étape, puis cliquez sur 'Suivant'.\n\nAstuce : Vous pouvez relancer ce guide à tout moment en cliquant sur le bouton 'Guide' en haut à droite.",
+    description: "Bienvenue dans votre application de gestion scolaire KlasNet. Ce guide va vous accompagner pas à pas pour découvrir chaque fonctionnalité. Prenez le temps de lire chaque étape, puis cliquez sur 'Suivant'.\n\nNote : Vous pouvez relancer ce guide à tout moment en cliquant sur le bouton 'Guide' en haut à droite.",
     icon: <Home className="h-10 w-10 text-teal-600 mx-auto mb-2" />,
     scrollTo: null
   },
@@ -17,7 +17,7 @@ const steps = [
   },
   {
     title: "Gestion des élèves",
-    description: "Dans le menu 'Élèves', vous pouvez :\n- Voir la liste de tous les élèves\n- Ajouter un nouvel élève (bouton 'Nouvel Élève')\n- Modifier ou supprimer un élève existant\n\nAstuce : Utilisez la barre de recherche pour retrouver rapidement un élève par nom, prénom ou matricule.\n\nExemple : Pour inscrire un nouvel élève, cliquez sur 'Nouvel Élève', remplissez le formulaire puis validez.",
+    description: "Dans le menu 'Élèves', vous pouvez :\n- Voir la liste de tous les élèves\n- Ajouter un nouvel élève (bouton 'Nouvel Élève')\n- Modifier ou supprimer un élève existant\n\nNote : Utilisez la barre de recherche pour retrouver rapidement un élève par nom, prénom ou matricule.\n\nExemple : Pour inscrire un nouvel élève, cliquez sur 'Nouvel Élève', remplissez le formulaire puis validez.",
     icon: <Users className="h-10 w-10 text-purple-500 mx-auto mb-2" />,
     scrollTo: null
   },
@@ -29,13 +29,13 @@ const steps = [
   },
   {
     title: "Saisie des notes",
-    description: "Dans la section 'Notes', vous pouvez :\n- Saisir les notes des élèves pour chaque matière et période\n- Consulter les moyennes et les résultats\n\nAstuce : Saisissez régulièrement les notes pour suivre la progression des élèves et générer les bulletins facilement.",
+    description: "Dans la section 'Notes', vous pouvez :\n- Saisir les notes des élèves pour chaque matière et période\n- Consulter les moyennes et les résultats\n\nNote : Saisissez régulièrement les notes pour suivre la progression des élèves et générer les bulletins facilement.",
     icon: <BookOpen className="h-10 w-10 text-indigo-500 mx-auto mb-2" />,
     scrollTo: null
   },
   {
     title: "Configuration",
-    description: "Dans 'Configuration', personnalisez votre application :\n- Définissez l'année scolaire active\n- Ajoutez ou modifiez les frais scolaires\n- Gérez les compositions et les paramètres de l'école\n\nExemple : Pour changer d'année scolaire, saisissez la nouvelle année puis cliquez sur 'Changer'.\n\nAstuce : Vérifiez toujours que l'année scolaire active est correcte avant de saisir de nouvelles données.",
+    description: "Dans 'Configuration', personnalisez votre application :\n- Définissez l'année scolaire active\n- Ajoutez ou modifiez les frais scolaires\n- Gérez les compositions et les paramètres de l'école\n\nExemple : Pour changer d'année scolaire, saisissez la nouvelle année puis cliquez sur 'Changer'.\n\nNote : Vérifiez toujours que l'année scolaire active est correcte avant de saisir de nouvelles données.",
     icon: <Settings className="h-10 w-10 text-gray-500 mx-auto mb-2" />,
     scrollTo: null
   },
@@ -47,20 +47,20 @@ const steps = [
   },
   {
     title: "Historique et alertes",
-    description: "KlasNet vous informe en temps réel :\n- Alertes sur les paiements en retard\n- Notifications pour les actions à effectuer (ex : élèves sans notes)\n- Historique des modifications (ajout, suppression, paiement, etc.)\n\nAstuce : Consultez régulièrement l'historique pour suivre l'activité de l'école et anticiper les besoins.",
+    description: "KlasNet vous informe en temps réel :\n- Alertes sur les paiements en retard\n- Notifications pour les actions à effectuer (ex : élèves sans notes)\n- Historique des modifications (ajout, suppression, paiement, etc.)\n\nNote : Consultez régulièrement l'historique pour suivre l'activité de l'école et anticiper les besoins.",
     icon: <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-2" />,
     scrollTo: null
   },
   {
     title: "Import/Export Excel",
-    description: "Gagnez du temps grâce à l'importation et l'exportation des listes d'élèves au format Excel !\n\n- Importez facilement une liste d'élèves depuis un fichier Excel.\n- Prévisualisez les données avant de valider l'importation.\n- Sélectionnez la classe d'affectation et vérifiez les colonnes importantes (Matricule, Nom, Prénoms).\n- Exportez la liste actuelle pour la partager ou l'archiver.\n\nAstuce : Vérifiez toujours l'aperçu avant de valider pour éviter les erreurs de saisie.",
-    icon: <Upload className="h-10 w-10 text-orange-500 mx-auto mb-2 animate-pulse" />,
+    description: "Gagnez du temps grâce à l'importation et l'exportation des listes d'élèves au format Excel.\n\n- Importez facilement une liste d'élèves depuis un fichier Excel.\n- Prévisualisez les données avant de valider l'importation.\n- Sélectionnez la classe d'affectation et vérifiez les colonnes importantes (Matricule, Nom, Prénoms).\n- Exportez la liste actuelle pour la partager ou l'archiver.\n\nNote : Vérifiez toujours l'aperçu avant de valider pour éviter les erreurs de saisie.",
+    icon: <Upload className="h-10 w-10 text-orange-500 mx-auto mb-2" />,
     scrollTo: null
   },
   {
-    title: "C'est parti !",
-    description: "Vous êtes prêt à utiliser KlasNet !\n\nN'hésitez pas à explorer chaque menu, à utiliser la recherche et à consulter ce guide en cas de besoin.\n\nBonne gestion et merci d'utiliser KlasNet !",
-    icon: <CheckCircle className="h-10 w-10 text-teal-600 mx-auto mb-2 animate-bounce" />,
+    title: "Prêt à commencer",
+    description: "Vous êtes prêt à utiliser KlasNet.\n\nN'hésitez pas à explorer chaque menu, à utiliser la recherche et à consulter ce guide en cas de besoin.\n\nBonne gestion avec KlasNet.",
+    icon: <CheckCircle className="h-10 w-10 text-teal-600 mx-auto mb-2" />,
     scrollTo: null
   }
 ];

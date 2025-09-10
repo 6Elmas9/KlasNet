@@ -23,19 +23,37 @@ export function getDefaultFraisForNiveau(niveau: string, annee: string) {
     `${next}-03-05`, // 6e
   ];
 
-  // amounts by niveau group
+  // Montants selon la structure fournie
   let inscription = 35000;
   let v1 = 15000;
   let v2 = 15000;
-  if (['CM1', 'CM2'].includes(niveau)) {
-    v1 = 20000;
-  }
-  if (niveau === 'CM2') {
-    inscription = 45000; // includes 10000 exam fee
-  }
-  // special case: maternelle (PS, MS, GS) same as inscription=35000 and v1=15000, v2=10000
+  
+  // Maternelles (PS, MS, GS) : 100 000 FCFA
   if (['Petite Section', 'Moyenne Section', 'Grande Section'].includes(niveau)) {
-    v2 = 10000;
+    inscription = 35000;
+    v1 = 15000;
+    v2 = 10000; // Versement 2 réduit pour maternelles
+  }
+  
+  // CP1, CP2, CE1, CE2 : 105 000 FCFA
+  if (['CP1', 'CP2', 'CE1', 'CE2'].includes(niveau)) {
+    inscription = 35000;
+    v1 = 15000;
+    v2 = 15000; // Versement 2 standard
+  }
+  
+  // CM1 : 110 000 FCFA
+  if (niveau === 'CM1') {
+    inscription = 35000;
+    v1 = 20000; // Versement 1 augmenté
+    v2 = 15000;
+  }
+  
+  // CM2 : 120 000 FCFA (inclut frais d'examen)
+  if (niveau === 'CM2') {
+    inscription = 45000; // Inscription + frais d'examen
+    v1 = 20000; // Versement 1 augmenté
+    v2 = 15000;
   }
 
   // Build echeances array (modalite numbering 1..7)
