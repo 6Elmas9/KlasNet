@@ -185,12 +185,11 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
                 const meta = { mode, note, numeroRecu, type, modalite } as Record<string, unknown>;
                 // include current user if available
                 try { const { getCurrentUser } = await import('../../utils/auth'); const cur = getCurrentUser(); if (cur) meta.utilisateur = `${cur.prenoms} ${cur.nom}`; } catch (err) { console.debug('getCurrentUser failed', err); }
-                const res = processPayment(eleveId, m, new Date().toISOString(), meta);
+                const res = echeancesManager.processPaymentIntelligent(eleveId, m, new Date().toISOString(), meta);
                 // add historique with current user
                 try {
                   const cur = (await import('../../utils/auth')).getCurrentUser();
-                  const r = res as ProcessPaymentResult;
-                  const paiementId = r && r.paiement && r.paiement.id ? String(r.paiement.id) : undefined;
+                  const paiementId = res && res.paiement && res.paiement.id ? String(res.paiement.id) : undefined;
                   db.addHistorique({ type: 'paiement', cible: 'Paiement', cibleId: paiementId, description: `Paiement de ${m} FCFA pour élève ${eleveId} (reçu ${meta.numeroRecu})`, utilisateur: cur ? `${cur.prenoms} ${cur.nom}` : 'Inconnu' });
                 } catch (err) { console.debug('historique skip:', err); }
                 // show preview in new window

@@ -210,6 +210,57 @@ export default function FinancesList() {
           </button>
         </div>
 
+        {/* Alertes d'échéances */}
+        {(alertesEcheances.echeancesEchues.length > 0 || alertesEcheances.echeancesProches.length > 0) && (
+          <div className="mt-4 p-4 bg-white bg-opacity-20 rounded-xl">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-white">Alertes d'Échéances</h3>
+              <button
+                onClick={() => setShowAlertesEcheances(!showAlertesEcheances)}
+                className="text-white hover:bg-white hover:bg-opacity-20 px-3 py-1 rounded-lg transition-colors text-sm"
+              >
+                {showAlertesEcheances ? 'Masquer' : 'Voir Détails'}
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              {alertesEcheances.echeancesEchues.length > 0 && (
+                <div className="bg-red-500 bg-opacity-20 rounded-lg p-3">
+                  <div className="font-semibold text-red-100">Échéances Échues</div>
+                  <div className="text-red-200">{alertesEcheances.echeancesEchues.length} élève(s) en retard</div>
+                </div>
+              )}
+              
+              {alertesEcheances.echeancesProches.length > 0 && (
+                <div className="bg-yellow-500 bg-opacity-20 rounded-lg p-3">
+                  <div className="font-semibold text-yellow-100">Échéances Prochaines</div>
+                  <div className="text-yellow-200">{alertesEcheances.echeancesProches.length} échéance(s) dans 7 jours</div>
+                </div>
+              )}
+            </div>
+
+            {showAlertesEcheances && (
+              <div className="mt-4 space-y-3">
+                {alertesEcheances.echeancesEchues.length > 0 && (
+                  <div className="bg-white bg-opacity-10 rounded-lg p-3">
+                    <h4 className="font-semibold text-white mb-2">Élèves avec échéances échues :</h4>
+                    <div className="space-y-1 text-sm">
+                      {alertesEcheances.echeancesEchues.slice(0, 5).map(alerte => (
+                        <div key={alerte.eleve.id} className="text-red-200">
+                          {alerte.eleve.prenoms} {alerte.eleve.nom} - {alerte.totalDu.toLocaleString('fr-FR')} FCFA en retard
+                        </div>
+                      ))}
+                      {alertesEcheances.echeancesEchues.length > 5 && (
+                        <div className="text-red-300">... et {alertesEcheances.echeancesEchues.length - 5} autre(s)</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Statistiques en ligne */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
