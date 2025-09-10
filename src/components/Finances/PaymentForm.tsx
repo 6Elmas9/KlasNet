@@ -128,14 +128,14 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
           
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Mode de paiement</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
               {[
                 { value: 'espece', label: '💵 Espèces', color: 'green' },
                 { value: 'mobile', label: '📱 Mobile Money', color: 'blue' },
                 { value: 'cheque', label: '📄 Chèque', color: 'purple' },
                 { value: 'virement', label: '🏦 Virement', color: 'indigo' }
               ].map(modeOption => (
-                <label key={modeOption.value} className={`flex items-center justify-center p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                <label key={modeOption.value} className={`flex items-center justify-center p-2 lg:p-3 border-2 rounded-xl cursor-pointer transition-all ${
                   mode === modeOption.value 
                     ? `border-${modeOption.color}-500 bg-${modeOption.color}-50 text-${modeOption.color}-700` 
                     : 'border-gray-200 hover:border-gray-300'
@@ -148,7 +148,7 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
                     onChange={(e) => setMode(e.target.value as any)}
                     className="sr-only"
                   />
-                  <span className="font-medium text-sm">{modeOption.label}</span>
+                  <span className="font-medium text-xs lg:text-sm">{modeOption.label}</span>
                 </label>
               ))}
             </div>
@@ -159,22 +159,22 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
             <textarea 
               value={note} 
               onChange={e => setNote(e.target.value)} 
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-500 transition-all resize-none" 
+              className="w-full px-3 lg:px-4 py-2 lg:py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-100 focus:border-teal-500 transition-all resize-none text-sm lg:text-base" 
               rows={3}
               placeholder="Commentaire sur ce paiement..."
             />
           </div>
           
-          <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 lg:gap-4 pt-4 lg:pt-6 border-t border-gray-200">
             <button 
-              className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-semibold" 
+              className="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-semibold" 
               onClick={onCancel} 
               disabled={isSaving}
             >
               Annuler
             </button>
             <button 
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl hover:from-green-700 hover:to-teal-700 transition-all disabled:opacity-50 font-semibold shadow-lg" 
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 lg:px-6 py-2 lg:py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl hover:from-green-700 hover:to-teal-700 transition-all disabled:opacity-50 font-semibold shadow-lg" 
               onClick={async () => {
               if (!eleveId) { showToast('Sélectionnez un élève', 'error'); return; }
               const m = Number(montant || 0);
@@ -227,11 +227,11 @@ export default function PaymentForm({ onCancel, onSubmit }: Props) {
             disabled={isSaving}
             >
               {isSaving ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 lg:h-5 lg:w-5 border-b-2 border-white"></div>
               ) : (
                 <span>💾</span>
               )}
-              <span>{isSaving ? 'Enregistrement...' : 'Enregistrer le paiement'}</span>
+              <span className="text-sm lg:text-base">{isSaving ? 'Enregistrement...' : 'Enregistrer le paiement'}</span>
             </button>
           </div>
         </div>

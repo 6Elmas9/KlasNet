@@ -549,7 +549,55 @@ export default function ElevesList({ onEleveSelect, onNewEleve }: ElevesListProp
         {/* Modal changement de classe */}
         {showChangeClasse && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full flex flex-col items-center">
+            <div className="bg-white rounded-2xl shadow-2xl p-4 lg:p-8 max-w-md w-[90vw] mx-4">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 lg:p-6 rounded-xl mb-6">
+                <h2 className="text-lg lg:text-xl font-bold text-center">Changement de Classe</h2>
+                <p className="text-blue-100 text-center mt-1 text-sm lg:text-base">
+                  {selectedEleves.length} élève(s) sélectionné(s)
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Nouvelle classe d'affectation
+                  </label>
+                  <select 
+                    value={newClasseId} 
+                    onChange={e => setNewClasseId(e.target.value)} 
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all"
+                  >
+                    <option value="">Sélectionner une classe</option>
+                    {classes.map(classe => (
+                      <option key={classe.id} value={classe.id}>
+                        {classe.niveau} {classe.section} ({classe.anneeScolaire})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <p className="text-blue-800 text-sm">
+                    ⚠️ Cette action modifiera la classe de tous les élèves sélectionnés
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 mt-6 pt-6 border-t border-gray-200">
+                <button 
+                  onClick={() => setShowChangeClasse(false)}
+                  className="w-full sm:w-auto px-4 py-2 lg:py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-semibold"
+                >
+                  Annuler
+                </button>
+                <button 
+                  onClick={handleChangeClasse} 
+                  disabled={!newClasseId}
+                  className="w-full sm:w-auto px-4 py-2 lg:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 font-semibold shadow-lg"
+                >
+                  Valider le Changement
+                </button>
+              </div>
               <>
               <h2 className="text-xl font-bold mb-4">Changer la classe de {selectedEleves.length} élève(s)</h2>
               <select value={newClasseId} onChange={e=>setNewClasseId(e.target.value)} className="w-full mb-4 border rounded px-3 py-2">

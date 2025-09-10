@@ -303,10 +303,10 @@ export default function FinancesList() {
 
       {/* Tableau principal avec design amélioré */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 lg:px-6 py-3 lg:py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Situations Financières</h2>
-            <p className="text-gray-600">{filteredSituations.length} élève(s) trouvé(s)</p>
+            <h2 className="text-lg lg:text-xl font-semibold text-gray-900">Situations Financières</h2>
+            <p className="text-gray-600 text-sm lg:text-base">{filteredSituations.length} élève(s) trouvé(s)</p>
           </div>
         </div>
 
@@ -314,61 +314,64 @@ export default function FinancesList() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Élève</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Classe</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Total Dû</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Total Payé</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Reste</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Statut</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Dernier Paiement</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Actions</th>
+                <th className="px-2 lg:px-4 py-2 lg:py-3 text-left text-xs lg:text-sm font-semibold text-gray-900">Élève</th>
+                <th className="px-2 lg:px-4 py-2 lg:py-3 text-left text-xs lg:text-sm font-semibold text-gray-900 hidden sm:table-cell">Classe</th>
+                <th className="px-2 lg:px-4 py-2 lg:py-3 text-right text-xs lg:text-sm font-semibold text-gray-900">Total Dû</th>
+                <th className="px-2 lg:px-4 py-2 lg:py-3 text-right text-xs lg:text-sm font-semibold text-gray-900">Total Payé</th>
+                <th className="px-2 lg:px-4 py-2 lg:py-3 text-right text-xs lg:text-sm font-semibold text-gray-900">Reste</th>
+                <th className="px-2 lg:px-4 py-2 lg:py-3 text-center text-xs lg:text-sm font-semibold text-gray-900">Statut</th>
+                <th className="px-2 lg:px-4 py-2 lg:py-3 text-center text-xs lg:text-sm font-semibold text-gray-900 hidden lg:table-cell">Dernier Paiement</th>
+                <th className="px-2 lg:px-4 py-2 lg:py-3 text-center text-xs lg:text-sm font-semibold text-gray-900">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredSituations.map((situation) => (
                 <tr key={situation.eleve.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-4">
+                  <td className="px-2 lg:px-4 py-3 lg:py-4">
                     <div className="flex items-center space-x-3">
                       {situation.eleve.photo && (
                         <img 
                           src={situation.eleve.photo} 
                           alt={`${situation.eleve.prenoms} ${situation.eleve.nom}`}
-                          className="h-10 w-10 rounded-full object-cover border-2 border-gray-200"
+                          className="h-8 w-8 lg:h-10 lg:w-10 rounded-full object-cover border-2 border-gray-200"
                         />
                       )}
                       <div>
-                        <div className="text-sm font-semibold text-gray-900">
+                        <div className="text-xs lg:text-sm font-semibold text-gray-900">
                           {situation.eleve.prenoms} {situation.eleve.nom}
                         </div>
-                        <div className="text-xs text-gray-500 font-mono">
+                        <div className="text-xs text-gray-500 font-mono hidden sm:block">
                           {situation.eleve.matricule}
+                        </div>
+                        <div className="text-xs text-gray-500 sm:hidden">
+                          {situation.classe ? `${situation.classe.niveau} ${situation.classe.section}` : 'Non assigné'}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 text-sm text-gray-700 font-medium">
+                  <td className="px-2 lg:px-4 py-3 lg:py-4 text-xs lg:text-sm text-gray-700 font-medium hidden sm:table-cell">
                     {situation.classe ? `${situation.classe.niveau} ${situation.classe.section}` : 'Non assigné'}
                   </td>
-                  <td className="px-4 py-4 text-sm text-gray-900 text-right font-bold">
+                  <td className="px-2 lg:px-4 py-3 lg:py-4 text-xs lg:text-sm text-gray-900 text-right font-bold">
                     {formatMontant(situation.totalDu)}
                   </td>
-                  <td className="px-4 py-4 text-sm text-green-700 text-right font-bold">
+                  <td className="px-2 lg:px-4 py-3 lg:py-4 text-xs lg:text-sm text-green-700 text-right font-bold">
                     {formatMontant(situation.totalPaye)}
                   </td>
-                  <td className="px-4 py-4 text-sm text-right font-bold">
+                  <td className="px-2 lg:px-4 py-3 lg:py-4 text-xs lg:text-sm text-right font-bold">
                     <span className={situation.solde > 0 ? 'text-red-600' : 'text-green-600'}>
                       {formatMontant(situation.solde)}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-center">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatutColor(situation.statut)}`}>
+                  <td className="px-2 lg:px-4 py-3 lg:py-4 text-center">
+                    <span className={`px-2 lg:px-3 py-1 rounded-full text-xs font-semibold ${getStatutColor(situation.statut)}`}>
                       {situation.statut === 'Payé' && '✅ '}
                       {situation.statut === 'Partiel' && '⚠️ '}
                       {situation.statut === 'Impayé' && '❌ '}
-                      {situation.statut}
+                      <span className="hidden lg:inline">{situation.statut}</span>
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-center text-sm text-gray-600">
+                  <td className="px-2 lg:px-4 py-3 lg:py-4 text-center text-xs lg:text-sm text-gray-600 hidden lg:table-cell">
                     {situation.dernierPaiement ? (
                       <div>
                         <div className="font-medium">
@@ -382,32 +385,32 @@ export default function FinancesList() {
                       <span className="text-gray-400">Aucun</span>
                     )}
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center justify-center space-x-1">
+                  <td className="px-2 lg:px-4 py-3 lg:py-4">
+                    <div className="flex items-center justify-center space-x-1 lg:space-x-2">
                       <button
                         onClick={() => setShowPaymentForm(true)}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        className="p-1 lg:p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                         title="Nouveau paiement"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3 w-3 lg:h-4 lg:w-4" />
                       </button>
                       
                       {situation.paiementsEleve.length > 0 && (
                         <>
                           <button
                             onClick={() => handlePrintRecu(situation.eleve)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-1 lg:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Imprimer dernier reçu"
                           >
-                            <Printer className="h-4 w-4" />
+                            <Printer className="h-3 w-3 lg:h-4 lg:w-4" />
                           </button>
                           
                           <button
                             onClick={() => handlePrintCombinedRecu(situation.eleve)}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                            className="p-1 lg:p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors hidden sm:block"
                             title="Reçu combiné"
                           >
-                            <FileText className="h-4 w-4" />
+                            <FileText className="h-3 w-3 lg:h-4 lg:w-4" />
                           </button>
                         </>
                       )}
@@ -415,10 +418,10 @@ export default function FinancesList() {
                       {situation.solde > 0 && (
                         <button
                           onClick={() => handlePrintConvocation(situation.eleve)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1 lg:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Convocation de paiement"
                         >
-                          <AlertTriangle className="h-4 w-4" />
+                          <AlertTriangle className="h-3 w-3 lg:h-4 lg:w-4" />
                         </button>
                       )}
                     </div>
@@ -431,9 +434,9 @@ export default function FinancesList() {
 
         {filteredSituations.length === 0 && (
           <div className="text-center py-12">
-            <DollarSign className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Aucune situation financière trouvée</p>
-            <p className="text-gray-400 text-sm mt-2">Ajustez vos filtres ou ajoutez des élèves</p>
+            <DollarSign className="h-12 w-12 lg:h-16 lg:w-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-base lg:text-lg">Aucune situation financière trouvée</p>
+            <p className="text-gray-400 text-xs lg:text-sm mt-2">Ajustez vos filtres ou ajoutez des élèves</p>
           </div>
         )}
       </div>
